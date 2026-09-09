@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=23">
 </head>
 <body>
   <div id="app">
@@ -28,6 +28,9 @@
       </button>
       <button id="auto-layout-btn" class="tool-btn" title="Auto Layout">
         <span>Auto</span>
+      </button>
+      <button id="toggle-io-btn" class="tool-btn" title="Import / Export Markdown">
+        <span>I/O</span>
       </button>
       <div class="tool-divider"></div>
       <button id="toggle-ai-btn" class="tool-btn" title="Gemini AI Assistant">
@@ -72,17 +75,19 @@
         <h2>Gemini AI Assistant</h2>
         <button id="close-ai-btn" class="icon-btn">&times;</button>
       </div>
-      <div class="ai-key-section">
-        <input type="password" id="gemini-api-key-input" placeholder="Paste Gemini API Key (optional)" />
+      <!-- Built-in Key Active: Hidden from UI -->
+      <div class="ai-key-section" style="display: none;">
+        <input type="password" id="gemini-api-key-input" autocomplete="off" />
       </div>
       <div id="ai-chat-log" class="ai-chat-log">
-        <div class="ai-msg bot">Hi! I am your Gemini AI Assistant. Ask me anything or click "+ To Map" to spawn AI ideas on your mind map!</div>
+        <div class="ai-msg bot">Hi! I am your Gemini AI Assistant. Ask me anything, click "+ To Map", or click "Full Tree" to generate an organized mind map!</div>
       </div>
       <div class="ai-chat-input-area">
         <textarea id="ai-input" placeholder="Ask Gemini or type 'Generate ideas for...'"></textarea>
         <div class="ai-input-actions">
           <button id="ai-send-btn" class="box-btn">Send</button>
           <button id="ai-mindmap-btn" class="box-btn">+ To Map</button>
+          <button id="ai-fullmap-btn" class="box-btn" title="Generate multi-level topic tree">Full Tree</button>
         </div>
       </div>
     </aside>
@@ -95,6 +100,8 @@
       <div id="nodes-layer" class="nodes-layer">
         <!-- Plain text boxes dynamically rendered -->
       </div>
+    </main>
+
     <!-- Box Modal Overlay -->
     <div id="box-modal" class="box-modal-overlay hidden">
       <div class="box-modal-card">
@@ -106,6 +113,7 @@
         <div id="box-modal-media" class="box-modal-media"></div>
         <div id="box-modal-files" class="box-modal-files"></div>
         <div class="box-modal-actions">
+          <button id="modal-ai-expand-btn" class="box-btn">AI Expand</button>
           <button id="modal-add-img-btn" class="box-btn">+ Image</button>
           <button id="modal-add-vid-btn" class="box-btn">+ Video</button>
           <button id="modal-add-file-btn" class="box-btn">+ File</button>
@@ -113,14 +121,50 @@
         </div>
       </div>
     </div>
+
+    <!-- Import / Export Markdown Modal Overlay -->
+    <div id="io-modal" class="box-modal-overlay hidden">
+      <div class="box-modal-card io-card">
+        <div class="box-modal-header">
+          <span class="box-modal-title">Markdown Outline & Image I/O</span>
+          <button id="close-io-modal-btn" class="box-modal-close">&times;</button>
+        </div>
+        <div class="io-tabs">
+          <button id="io-tab-export-btn" class="io-tab active">Export Outline</button>
+          <button id="io-tab-import-btn" class="io-tab">Import Outline</button>
+        </div>
+        <div id="io-export-panel" class="io-panel">
+          <textarea id="io-export-text" readonly class="io-textarea" placeholder="Loading outline..."></textarea>
+          <div class="io-actions">
+            <button id="copy-markdown-btn" class="box-btn">Copy Markdown</button>
+            <button id="download-markdown-btn" class="box-btn">Download .md</button>
+            <button id="export-png-btn" class="box-btn">Export PNG Image</button>
+          </div>
+        </div>
+        <div id="io-import-panel" class="io-panel hidden">
+          <p class="io-help-text">Paste an indented text or markdown bullet list below to generate mind map boxes:</p>
+          <textarea id="io-import-text" class="io-textarea" placeholder="- Main Goal&#10;  - Category 1&#10;    - Step A&#10;  - Category 2"></textarea>
+          <div class="io-actions">
+            <label class="io-checkbox-label">
+              <input type="checkbox" id="io-import-replace" checked> Replace current canvas
+            </label>
+            <button id="run-import-btn" class="box-btn">Build Mind Map</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js?v=23"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('PWA ServiceWorker registered:', reg.scope))
+        navigator.serviceWorker.register('./sw.js?v=23')
+          .then(reg => {
+            reg.update();
+            console.log('PWA ServiceWorker registered & updated:', reg.scope);
+          })
           .catch(err => console.warn('PWA ServiceWorker registration failed:', err));
       });
     }

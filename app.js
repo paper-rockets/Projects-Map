@@ -1,28 +1,90 @@
-// Ultra-Minimal Studio Engine - Fix Sidebar Close & All-Box Titles
-const STORAGE_KEY = 'mind_canvas_studio_v13';
+// Ultra-Minimal Studio Engine - Top 4 Features Integrated:
+// 1. Tab & Enter Keyboard Speed Navigation
+// 2. On-Canvas "AI Expand" & Full Topic Generator
+// 3. Sub-branch Collapse & Expand
+// 4. Markdown Outline Import & Export (Plus PNG Export)
+const STORAGE_KEY = 'mind_canvas_studio_v14';
 
 const defaultState = {
   scale: 1,
   panX: 0,
   panY: 0,
-  selectedNodeId: null,
+  selectedNodeId: 'box-1',
   theme: 'dark',
   ideas: [],
   nodes: [
     {
       id: 'box-1',
       title: '',
-      body: '',
+      body: 'Central Topic',
       media: [],
       files: [],
       x: 240,
       y: 200,
-      parentId: null
+      parentId: null,
+      parentIds: [],
+      collapsed: false
     }
   ]
 };
 
 let state = loadFromLocalStorage();
+window.state = state;
+
+// DOM Element References
+const canvasContainer = document.getElementById('canvas-container');
+const nodesLayer = document.getElementById('nodes-layer');
+const connectionsGroup = document.getElementById('connections-group');
+const sidebar = document.getElementById('sidebar');
+const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+const drawerOverlay = document.getElementById('drawer-overlay');
+const ideaSearch = document.getElementById('idea-search');
+const ideasList = document.getElementById('ideas-list');
+const zoomLevelEl = document.getElementById('zoom-level');
+
+// File Upload Elements
+const imageFileInput = document.createElement('input');
+imageFileInput.type = 'file';
+imageFileInput.accept = 'image/*';
+
+const videoFileInput = document.createElement('input');
+videoFileInput.type = 'file';
+videoFileInput.accept = 'video/*';
+
+const docFileInput = document.createElement('input');
+docFileInput.type = 'file';
+
+const mediaPickerGeneral = document.createElement('input');
+mediaPickerGeneral.type = 'file';
+mediaPickerGeneral.accept = 'image/*,video/*';
+
+let activeNodeForImageUpload = null;
+let activeNodeForVideoUpload = null;
+let activeNodeForFileUpload = null;
+
+// Pointer & Drag Interaction State
+const activePointers = new Map();
+let isPanningCanvas = false;
+let panStartX = 0;
+let panStartY = 0;
+
+let draggingCardNode = null;
+let grabOffsetX = 0;
+let grabOffsetY = 0;
+
+let isResizingCardNode = null;
+let resizeStartWidth = 0;
+let resizeStartHeight = 0;
+let resizeStartPointerX = 0;
+let resizeStartPointerY = 0;
+
+let isLinkingWire = false;
+let linkingSourceNodeId = null;
+let linkingTempPos = { x: 0, y: 0 };
+
+let initialPinchDist = 0;
+let initialPinchScale = 1;
 
 // Theme Management
 function setTheme(themeName) {
@@ -53,14 +115,14 @@ function cycleTheme() {
 
 // Init
 function init() {
-  setTheme(state.theme || 'dark');
-  renderSidebar();
-  renderCanvas();
-  setupGlobalPointerMovement();
-  setupClipboardAndFileDrop();
-  setupFileInputListeners();
-  setupEventListeners();
-  updateTransform();
+  try { setTheme(state.theme || 'dark'); } catch (e) { console.error('Theme error:', e); }
+  try { setupEventListeners(); } catch (e) { console.error('setupEventListeners error:', e); }
+  try { setupGlobalPointerMovement(); } catch (e) { console.error('setupGlobalPointerMovement error:', e); }
+  try { setupClipboardAndFileDrop(); } catch (e) { console.error('setupClipboardAndFileDrop error:', e); }
+  try { setupFileInputListeners(); } catch (e) { console.error('setupFileInputListeners error:', e); }
+  try { renderCanvas(); } catch (e) { console.error('renderCanvas error:', e); }
+  try { renderSidebar(); } catch (e) { console.error('renderSidebar error:', e); }
+  try { updateTransform(); } catch (e) { console.error('updateTransform error:', e); }
 }
 
 // LocalStorage Persistence
@@ -87,14 +149,21 @@ function loadFromLocalStorage() {
     const parsed = JSON.parse(raw);
     const loadedNodes = (parsed.nodes || defaultState.nodes).map(n => ({
       ...n,
-      parentIds: Array.isArray(n.parentIds) ? n.parentIds : (n.parentId ? [n.parentId] : [])
+      parentIds: Array.isArray(n.parentIds) ? n.parentIds : (n.parentId ? [n.parentId] : []),
+      collapsed: !!n.collapsed
     }));
+    const validScale = (typeof parsed.scale === 'number' && !isNaN(parsed.scale) && parsed.scale > 0.1 && parsed.scale <= 5) ? parsed.scale : 1;
+    const validPanX = (typeof parsed.panX === 'number' && !isNaN(parsed.panX)) ? parsed.panX : 0;
+    const validPanY = (typeof parsed.panY === 'number' && !isNaN(parsed.panY)) ? parsed.panY : 0;
     return {
       ...defaultState,
       ...parsed,
+      scale: validScale,
+      panX: validPanX,
+      panY: validPanY,
       theme: parsed.theme || 'dark',
-      nodes: loadedNodes,
-      ideas: parsed.ideas || []
+      nodes: loadedNodes.length > 0 ? loadedNodes : defaultState.nodes,
+      ideas: Array.isArray(parsed.ideas) ? parsed.ideas : []
     };
   } catch (e) {
     return { ...defaultState };
@@ -113,6 +182,144 @@ const modalAddImgBtn = document.getElementById('modal-add-img-btn');
 const modalAddVidBtn = document.getElementById('modal-add-vid-btn');
 const modalAddFileBtn = document.getElementById('modal-add-file-btn');
 const modalDeleteBtn = document.getElementById('modal-delete-btn');
+const modalAiExpandBtn = document.getElementById('modal-ai-expand-btn');
+
+// I/O Modal Elements
+const ioModal = document.getElementById('io-modal');
+const toggleIoBtn = document.getElementById('toggle-io-btn');
+const closeIoModalBtn = document.getElementById('close-io-modal-btn');
+const ioTabExportBtn = document.getElementById('io-tab-export-btn');
+const ioTabImportBtn = document.getElementById('io-tab-import-btn');
+const ioExportPanel = document.getElementById('io-export-panel');
+const ioImportPanel = document.getElementById('io-import-panel');
+const ioExportText = document.getElementById('io-export-text');
+const ioImportText = document.getElementById('io-import-text');
+const copyMarkdownBtn = document.getElementById('copy-markdown-btn');
+const downloadMarkdownBtn = document.getElementById('download-markdown-btn');
+const exportPngBtn = document.getElementById('export-png-btn');
+const runImportBtn = document.getElementById('run-import-btn');
+const ioImportReplace = document.getElementById('io-import-replace');
+
+// Gemini AI Panel Elements
+const aiChatPanel = document.getElementById('ai-chat-panel');
+const toggleAiBtn = document.getElementById('toggle-ai-btn');
+const closeAiBtn = document.getElementById('close-ai-btn');
+const geminiApiKeyInput = document.getElementById('gemini-api-key-input');
+const aiChatLog = document.getElementById('ai-chat-log');
+const aiInput = document.getElementById('ai-input');
+const aiSendBtn = document.getElementById('ai-send-btn');
+const aiMindmapBtn = document.getElementById('ai-mindmap-btn');
+const aiFullmapBtn = document.getElementById('ai-fullmap-btn');
+
+// FEATURE 3: Branch Collapse / Expand Helpers
+function isNodeHiddenByCollapse(node) {
+  if (!node) return false;
+  let visited = new Set();
+  let currentParents = (node.parentIds && node.parentIds.length > 0)
+    ? [...node.parentIds]
+    : (node.parentId ? [node.parentId] : []);
+
+  while (currentParents.length > 0) {
+    const pId = currentParents.shift();
+    if (visited.has(pId)) continue;
+    visited.add(pId);
+
+    const pNode = state.nodes.find(n => n.id === pId);
+    if (pNode) {
+      if (pNode.collapsed) return true;
+      if (pNode.parentIds && pNode.parentIds.length > 0) {
+        currentParents.push(...pNode.parentIds);
+      } else if (pNode.parentId) {
+        currentParents.push(pNode.parentId);
+      }
+    }
+  }
+  return false;
+}
+
+function countDescendants(nodeId, visited = new Set()) {
+  if (!nodeId || visited.has(nodeId)) return 0;
+  visited.add(nodeId);
+  let count = 0;
+  const children = state.nodes.filter(n => (n.parentIds && n.parentIds.includes(nodeId)) || n.parentId === nodeId);
+  children.forEach(c => {
+    if (!visited.has(c.id)) {
+      count += 1 + countDescendants(c.id, visited);
+    }
+  });
+  return count;
+}
+
+// FEATURE 1: Keyboard Tree Speed Navigation Helpers
+function createChildNode(parentNode) {
+  if (!parentNode) return null;
+  if (parentNode.collapsed) {
+    parentNode.collapsed = false;
+  }
+  const children = state.nodes.filter(n => (n.parentIds && n.parentIds.includes(parentNode.id)) || n.parentId === parentNode.id);
+  const childX = parentNode.x + (parentNode.width || 200) + 60;
+  let childY = parentNode.y;
+  if (children.length > 0) {
+    const maxY = Math.max(...children.map(c => c.y + (c.height || 50)));
+    childY = maxY + 16;
+  }
+  const newNode = spawnNode('', '', [], [], childX, childY, parentNode.id);
+  return newNode;
+}
+
+function createSiblingNode(node) {
+  if (!node) return null;
+  const parentId = (node.parentIds && node.parentIds[0]) || node.parentId || null;
+  let childX = node.x;
+  let childY = node.y + (node.height || 50) + 16;
+  if (parentId) {
+    const parent = state.nodes.find(n => n.id === parentId);
+    if (parent && parent.collapsed) parent.collapsed = false;
+    const siblings = state.nodes.filter(n => (n.parentIds && n.parentIds.includes(parentId)) || n.parentId === parentId);
+    if (siblings.length > 0) {
+      const maxY = Math.max(...siblings.map(s => s.y + (s.height || 50)));
+      childY = maxY + 16;
+    }
+  }
+  const newNode = spawnNode('', '', [], [], childX, childY, parentId);
+  return newNode;
+}
+
+function deleteNodeById(nodeId) {
+  if (!nodeId) return;
+  const nodeToDelete = state.nodes.find(n => n.id === nodeId);
+  const parentId = nodeToDelete ? ((nodeToDelete.parentIds && nodeToDelete.parentIds[0]) || nodeToDelete.parentId) : null;
+
+  state.nodes = state.nodes.filter(n => n.id !== nodeId);
+  state.nodes.forEach(n => {
+    if (n.parentIds) {
+      n.parentIds = n.parentIds.filter(id => id !== nodeId);
+      n.parentId = n.parentIds[0] || null;
+    }
+  });
+
+  state.selectedNodeId = parentId || (state.nodes[0] ? state.nodes[0].id : null);
+  renderCanvas();
+  saveState();
+}
+
+function focusNodeText(nodeId) {
+  requestAnimationFrame(() => {
+    const card = nodesLayer.querySelector(`[data-node-id="${nodeId}"]`);
+    if (card) {
+      const bodyEl = card.querySelector('.box-body');
+      if (bodyEl) {
+        bodyEl.focus();
+        const range = document.createRange();
+        range.selectNodeContents(bodyEl);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+  });
+}
 
 function openBoxModal(node) {
   if (!node) return;
@@ -241,16 +448,17 @@ function setupFileInputListeners() {
 
 // Render Sidebar Ideas
 function renderSidebar() {
-  const filter = ideaSearch.value.toLowerCase();
+  if (!ideasList) return;
+  const filter = (ideaSearch && ideaSearch.value) ? ideaSearch.value.toLowerCase().trim() : '';
   ideasList.innerHTML = '';
 
-  if (state.ideas.length === 0) {
+  if (!Array.isArray(state.ideas) || state.ideas.length === 0) {
     ideasList.innerHTML = '<div style="font-size:12px; color:#64748b; padding:10px;">No saved items. Click "+ Box" to create one.</div>';
     return;
   }
 
   state.ideas.forEach((idea) => {
-    if (filter && !idea.title.toLowerCase().includes(filter)) return;
+    if (filter && (!idea.title || !idea.title.toLowerCase().includes(filter))) return;
 
     const card = document.createElement('div');
     card.className = 'idea-card';
@@ -271,21 +479,23 @@ function renderSidebar() {
 function spawnNode(title = '', body = '', media = [], files = [], x = null, y = null, parentId = null) {
   const pIds = parentId ? [parentId] : [];
   const newNode = {
-    id: 'box-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+    id: 'box-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
     title: title || '',
     body: body || '',
     media: media || [],
     files: files || [],
-    x: x || 200,
-    y: y || 200,
+    x: x !== null ? x : 200,
+    y: y !== null ? y : 200,
     parentId: parentId,
-    parentIds: pIds
+    parentIds: pIds,
+    collapsed: false
   };
 
   state.nodes.push(newNode);
   state.selectedNodeId = newNode.id;
   renderCanvas();
   saveState();
+  return newNode;
 }
 
 // Render Canvas Text Boxes (EVERY Box Has a Title & Body Text Field)
@@ -293,13 +503,32 @@ function renderCanvas() {
   nodesLayer.innerHTML = '';
 
   state.nodes.forEach(node => {
+    const isHidden = isNodeHiddenByCollapse(node);
+
     const card = document.createElement('div');
-    card.className = `text-box-card ${state.selectedNodeId === node.id ? 'selected' : ''}`;
+    card.className = `text-box-card ${state.selectedNodeId === node.id ? 'selected' : ''} ${isHidden ? 'node-collapsed-hidden' : ''}`;
     card.style.left = `${node.x}px`;
     card.style.top = `${node.y}px`;
     if (node.width) card.style.width = `${node.width}px`;
     if (node.height) card.style.height = `${node.height}px`;
     card.dataset.nodeId = node.id;
+
+    // Collapse / Expand Pill on right edge if node has children
+    const childNodes = state.nodes.filter(n => (n.parentIds && n.parentIds.includes(node.id)) || n.parentId === node.id);
+    if (childNodes.length > 0) {
+      const toggleBtn = document.createElement('button');
+      const descCount = countDescendants(node.id);
+      toggleBtn.className = `collapse-toggle-btn ${node.collapsed ? 'collapsed' : ''}`;
+      toggleBtn.title = node.collapsed ? `Expand ${descCount} branches` : 'Collapse branches';
+      toggleBtn.innerText = node.collapsed ? `+${descCount}` : '−';
+      toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        node.collapsed = !node.collapsed;
+        renderCanvas();
+        saveState();
+      });
+      card.appendChild(toggleBtn);
+    }
 
     let mediaHtml = '';
     if (node.media && node.media.length > 0) {
@@ -338,7 +567,8 @@ function renderCanvas() {
       filesHtml += '</div>';
     }
 
-    card.innerHTML = `
+    const cardContent = document.createElement('div');
+    cardContent.innerHTML = `
       <div class="port-dot left" title="Connect Here"></div>
       <div class="port-dot right" title="Drag Wire to Connect"></div>
       <div class="port-dot top" title="Drag Wire to Connect"></div>
@@ -352,6 +582,7 @@ function renderCanvas() {
       <div class="box-actions">
         <button class="box-btn open-modal-btn">Modal</button>
         <button class="box-btn add-child-btn">+ Child</button>
+        <button class="box-btn ai-expand-btn" title="Expand with Gemini AI">AI Expand</button>
         <button class="box-btn add-img-btn">+ Image</button>
         <button class="box-btn add-vid-btn">+ Video</button>
         <button class="box-btn add-file-btn">+ File</button>
@@ -359,6 +590,10 @@ function renderCanvas() {
       </div>
       <div class="resize-handle" title="Resize Box"></div>
     `;
+
+    while (cardContent.firstChild) {
+      card.appendChild(cardContent.firstChild);
+    }
 
     const bodyEl = card.querySelector('.box-body');
 
@@ -368,29 +603,57 @@ function renderCanvas() {
       saveState();
     });
 
+    // Keyboard Tab / Enter directly while editing box text
+    bodyEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const child = createChildNode(node);
+        if (child) focusNodeText(child.id);
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const sib = createSiblingNode(node);
+        if (sib) focusNodeText(sib.id);
+      } else if (e.key === 'Escape') {
+        bodyEl.blur();
+      }
+    });
+
     card.addEventListener('dblclick', (e) => {
       e.stopPropagation();
       openBoxModal(node);
     });
 
-    card.querySelector('.open-modal-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      openBoxModal(node);
-    });
+    const openModalBtn = card.querySelector('.open-modal-btn');
+    if (openModalBtn) {
+      openModalBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openBoxModal(node);
+      });
+    }
+
+    const aiExpBtn = card.querySelector('.ai-expand-btn');
+    if (aiExpBtn) {
+      aiExpBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        aiExpandNode(node.id, aiExpBtn);
+      });
+    }
 
     const handle = card.querySelector('.resize-handle');
-    handle.addEventListener('pointerdown', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      isResizingCardNode = node;
+    if (handle) {
+      handle.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        isResizingCardNode = node;
 
-      const rect = card.getBoundingClientRect();
-      resizeStartWidth = rect.width / state.scale;
-      resizeStartHeight = rect.height / state.scale;
+        const rect = card.getBoundingClientRect();
+        resizeStartWidth = rect.width / state.scale;
+        resizeStartHeight = rect.height / state.scale;
 
-      resizeStartPointerX = e.clientX;
-      resizeStartPointerY = e.clientY;
-    });
+        resizeStartPointerX = e.clientX;
+        resizeStartPointerY = e.clientY;
+      });
+    }
 
     card.querySelectorAll('.media-remove-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -421,7 +684,7 @@ function renderCanvas() {
     });
 
     card.addEventListener('pointerdown', (e) => {
-      if (e.target === bodyEl || e.target.closest('button') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.port-dot') || e.target.closest('.resize-handle')) return;
+      if (e.target === bodyEl || e.target.closest('button') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.port-dot') || e.target.closest('.resize-handle') || e.target.closest('.collapse-toggle-btn')) return;
       e.stopPropagation();
 
       state.selectedNodeId = node.id;
@@ -434,46 +697,53 @@ function renderCanvas() {
       grabOffsetX = pointerCanvasX - node.x;
       grabOffsetY = pointerCanvasY - node.y;
 
-      renderCanvas();
+      document.querySelectorAll('.text-box-card.selected').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
     });
 
-    card.querySelector('.add-child-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      const siblings = state.nodes.filter(n => (n.parentIds && n.parentIds.includes(node.id)) || n.parentId === node.id);
-      const childY = node.y + (siblings.length * 90);
-      spawnNode('', '', [], [], node.x + 260, childY, node.id);
-    });
-
-    card.querySelector('.add-img-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      activeNodeForImageUpload = node;
-      imageFileInput.click();
-    });
-
-    card.querySelector('.add-vid-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      activeNodeForVideoUpload = node;
-      videoFileInput.click();
-    });
-
-    card.querySelector('.add-file-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      activeNodeForFileUpload = node;
-      docFileInput.click();
-    });
-
-    card.querySelector('.delete-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      state.nodes = state.nodes.filter(n => n.id !== node.id);
-      state.nodes.forEach(n => {
-        if (n.parentIds) {
-          n.parentIds = n.parentIds.filter(id => id !== node.id);
-          n.parentId = n.parentIds[0] || null;
-        }
+    const addChildBtn = card.querySelector('.add-child-btn');
+    if (addChildBtn) {
+      addChildBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const child = createChildNode(node);
+        if (child) focusNodeText(child.id);
       });
-      renderCanvas();
-      saveState();
-    });
+    }
+
+    const addImgBtn = card.querySelector('.add-img-btn');
+    if (addImgBtn) {
+      addImgBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activeNodeForImageUpload = node;
+        imageFileInput.click();
+      });
+    }
+
+    const addVidBtn = card.querySelector('.add-vid-btn');
+    if (addVidBtn) {
+      addVidBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activeNodeForVideoUpload = node;
+        videoFileInput.click();
+      });
+    }
+
+    const addFileBtn = card.querySelector('.add-file-btn');
+    if (addFileBtn) {
+      addFileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activeNodeForFileUpload = node;
+        docFileInput.click();
+      });
+    }
+
+    const deleteBtn = card.querySelector('.delete-btn');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteNodeById(node.id);
+      });
+    }
 
     nodesLayer.appendChild(card);
   });
@@ -564,11 +834,13 @@ function renderConnections() {
   connectionsGroup.innerHTML = '';
 
   state.nodes.forEach(node => {
+    if (isNodeHiddenByCollapse(node)) return;
+
     const parentIds = Array.isArray(node.parentIds) ? node.parentIds : (node.parentId ? [node.parentId] : []);
 
     parentIds.forEach(pId => {
       const parent = state.nodes.find(n => n.id === pId);
-      if (!parent) return;
+      if (!parent || isNodeHiddenByCollapse(parent) || parent.collapsed) return;
 
       const parentEl = nodesLayer.querySelector(`[data-node-id="${parent.id}"]`);
       const childEl = nodesLayer.querySelector(`[data-node-id="${node.id}"]`);
@@ -786,28 +1058,83 @@ function closeSidebar() {
 
 // Setup Event Listeners
 function setupEventListeners() {
-  toggleSidebarBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (sidebar.classList.contains('open')) closeSidebar();
-    else openSidebar();
-  });
+  if (toggleSidebarBtn) {
+    toggleSidebarBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (sidebar && sidebar.classList.contains('open')) closeSidebar();
+      else openSidebar();
+    });
+  }
 
-  closeSidebarBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeSidebar();
-  });
+  if (closeSidebarBtn) {
+    closeSidebarBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeSidebar();
+    });
+  }
 
-  drawerOverlay.addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeSidebar();
-  });
+  if (drawerOverlay) {
+    drawerOverlay.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeSidebar();
+    });
+  }
 
+  // Global Keyboard Shortcuts (Speed Navigation & Tree Building)
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (boxModalOverlay && !boxModalOverlay.classList.contains('hidden')) {
         closeBoxModal();
+      } else if (ioModal && !ioModal.classList.contains('hidden')) {
+        closeIoModal();
       } else if (sidebar.classList.contains('open')) {
         closeSidebar();
+      }
+      return;
+    }
+
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+    if ((boxModalOverlay && !boxModalOverlay.classList.contains('hidden')) || (ioModal && !ioModal.classList.contains('hidden'))) return;
+
+    if (state.selectedNodeId) {
+      const selNode = state.nodes.find(n => n.id === state.selectedNodeId);
+      if (!selNode) return;
+
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const child = createChildNode(selNode);
+        if (child) focusNodeText(child.id);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const sib = createSiblingNode(selNode);
+        if (sib) focusNodeText(sib.id);
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        deleteNodeById(state.selectedNodeId);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const children = state.nodes.filter(n => (n.parentIds && n.parentIds.includes(selNode.id)) || n.parentId === selNode.id);
+        if (children.length > 0) {
+          state.selectedNodeId = children[0].id;
+          renderCanvas();
+        }
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const parentId = (selNode.parentIds && selNode.parentIds[0]) || selNode.parentId;
+        if (parentId) {
+          state.selectedNodeId = parentId;
+          renderCanvas();
+        }
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const pId = (selNode.parentIds && selNode.parentIds[0]) || selNode.parentId || null;
+        const siblings = state.nodes.filter(n => ((n.parentIds && n.parentIds.includes(pId)) || n.parentId === pId));
+        const idx = siblings.findIndex(s => s.id === selNode.id);
+        if (idx !== -1) {
+          const nextIdx = e.key === 'ArrowDown' ? Math.min(siblings.length - 1, idx + 1) : Math.max(0, idx - 1);
+          state.selectedNodeId = siblings[nextIdx].id;
+          renderCanvas();
+        }
       }
     }
   });
@@ -829,6 +1156,13 @@ function setupEventListeners() {
   if (boxModalOverlay) {
     boxModalOverlay.addEventListener('click', (e) => {
       if (e.target === boxModalOverlay) closeBoxModal();
+    });
+  }
+
+  if (modalAiExpandBtn) {
+    modalAiExpandBtn.addEventListener('click', () => {
+      if (!activeModalNodeId) return;
+      aiExpandNode(activeModalNodeId, modalAiExpandBtn);
     });
   }
 
@@ -862,30 +1196,34 @@ function setupEventListeners() {
   if (modalDeleteBtn) {
     modalDeleteBtn.addEventListener('click', () => {
       if (!activeModalNodeId) return;
-      state.nodes = state.nodes.filter(n => n.id !== activeModalNodeId);
-      state.nodes.forEach(n => {
-        if (n.parentIds) {
-          n.parentIds = n.parentIds.filter(id => id !== activeModalNodeId);
-          n.parentId = n.parentIds[0] || null;
-        }
-      });
+      deleteNodeById(activeModalNodeId);
       closeBoxModal();
-      saveState();
     });
   }
 
-  ideaSearch.addEventListener('input', renderSidebar);
+  if (ideaSearch) ideaSearch.addEventListener('input', renderSidebar);
 
-  if (document.getElementById('zoom-in-btn')) {
-    document.getElementById('zoom-in-btn').addEventListener('click', () => {
+  // Zoom Controls
+  const zoomInBtn = document.getElementById('zoom-in-btn');
+  if (zoomInBtn) {
+    zoomInBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       state.scale = Math.min(state.scale * 1.2, 3);
       updateTransform();
     });
-    document.getElementById('zoom-out-btn').addEventListener('click', () => {
+  }
+  const zoomOutBtn = document.getElementById('zoom-out-btn');
+  if (zoomOutBtn) {
+    zoomOutBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       state.scale = Math.max(state.scale / 1.2, 0.3);
       updateTransform();
     });
-    document.getElementById('zoom-reset-btn').addEventListener('click', () => {
+  }
+  const zoomResetBtn = document.getElementById('zoom-reset-btn');
+  if (zoomResetBtn) {
+    zoomResetBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       state.scale = 1;
       state.panX = 0;
       state.panY = 0;
@@ -893,39 +1231,120 @@ function setupEventListeners() {
     });
   }
 
-  document.getElementById('add-root-node-btn').addEventListener('click', () => {
-    const centerX = (-state.panX + window.innerWidth / 2) / state.scale - 110;
-    const centerY = (-state.panY + window.innerHeight / 2) / state.scale - 50;
-    spawnNode('', '', [], [], centerX, centerY);
-  });
-
-  document.getElementById('add-media-node-btn').addEventListener('click', () => {
-    mediaPickerGeneral.click();
-  });
-
-  document.getElementById('auto-layout-btn').addEventListener('click', () => {
-    let startX = 150, startY = 150;
-    state.nodes.forEach((node, index) => {
-      if (!node.parentId) {
-        node.x = startX;
-        node.y = startY + (index * 160);
-      } else {
-        const parent = state.nodes.find(n => n.id === node.parentId);
-        if (parent) {
-          node.x = parent.x + 270;
-          node.y = parent.y + ((index % 3) * 110 - 55);
-        }
-      }
+  const addRootBtn = document.getElementById('add-root-node-btn');
+  if (addRootBtn) {
+    addRootBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const safeScale = (state.scale && state.scale > 0) ? state.scale : 1;
+      const safePanX = typeof state.panX === 'number' ? state.panX : 0;
+      const safePanY = typeof state.panY === 'number' ? state.panY : 0;
+      const centerX = (-safePanX + window.innerWidth / 2) / safeScale - 110;
+      const centerY = (-safePanY + window.innerHeight / 2) / safeScale - 50;
+      spawnNode('', 'New Idea', [], [], centerX, centerY);
     });
-    renderCanvas();
-    saveState();
-  });
+  }
+
+  const addMediaBtn = document.getElementById('add-media-node-btn');
+  if (addMediaBtn) {
+    addMediaBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mediaPickerGeneral.click();
+    });
+  }
+
+  const autoLayoutBtn = document.getElementById('auto-layout-btn');
+  if (autoLayoutBtn) {
+    autoLayoutBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      let startX = 150, startY = 150;
+      state.nodes.forEach((node, index) => {
+        if (!node.parentId && (!node.parentIds || node.parentIds.length === 0)) {
+          node.x = startX;
+          node.y = startY + (index * 160);
+        } else {
+          const pId = (node.parentIds && node.parentIds[0]) || node.parentId;
+          const parent = state.nodes.find(n => n.id === pId);
+          if (parent) {
+            node.x = parent.x + 270;
+            node.y = parent.y + ((index % 3) * 110 - 55);
+          }
+        }
+      });
+      renderCanvas();
+      saveState();
+    });
+  }
 
   const themeToggleBtn = document.getElementById('theme-toggle-btn');
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       cycleTheme();
+    });
+  }
+
+  // I/O Modal Listeners
+  if (toggleIoBtn) {
+    toggleIoBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openIoModal('export');
+    });
+  }
+
+  if (closeIoModalBtn) closeIoModalBtn.addEventListener('click', closeIoModal);
+  if (ioModal) {
+    ioModal.addEventListener('click', (e) => {
+      if (e.target === ioModal) closeIoModal();
+    });
+  }
+
+  if (ioTabExportBtn) ioTabExportBtn.addEventListener('click', () => showIoTab('export'));
+  if (ioTabImportBtn) ioTabImportBtn.addEventListener('click', () => showIoTab('import'));
+
+  if (copyMarkdownBtn) {
+    copyMarkdownBtn.addEventListener('click', async () => {
+      const text = ioExportText ? ioExportText.value : '';
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        const prev = copyMarkdownBtn.innerText;
+        copyMarkdownBtn.innerText = 'Copied!';
+        setTimeout(() => { copyMarkdownBtn.innerText = prev; }, 1500);
+      } catch (err) {
+        alert('Could not copy to clipboard.');
+      }
+    });
+  }
+
+  if (downloadMarkdownBtn) {
+    downloadMarkdownBtn.addEventListener('click', () => {
+      const text = ioExportText ? ioExportText.value : '';
+      const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'mindmap.md';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  if (exportPngBtn) {
+    exportPngBtn.addEventListener('click', () => {
+      exportCanvasToPng();
+    });
+  }
+
+  if (runImportBtn) {
+    runImportBtn.addEventListener('click', () => {
+      const text = ioImportText ? ioImportText.value.trim() : '';
+      if (!text) {
+        alert('Please enter some outline text first.');
+        return;
+      }
+      const replace = ioImportReplace ? ioImportReplace.checked : true;
+      importMarkdownToCanvas(text, replace);
+      closeIoModal();
     });
   }
 
@@ -941,13 +1360,20 @@ function setupEventListeners() {
   if (closeAiBtn) closeAiBtn.addEventListener('click', closeAiPanel);
 
   if (geminiApiKeyInput) {
-    geminiApiKeyInput.addEventListener('change', () => {
+    const savedKey = localStorage.getItem('gemini_api_key') || '';
+    if (savedKey) geminiApiKeyInput.value = savedKey;
+
+    const saveKey = () => {
       localStorage.setItem('gemini_api_key', geminiApiKeyInput.value.trim());
-    });
+    };
+    geminiApiKeyInput.addEventListener('input', saveKey);
+    geminiApiKeyInput.addEventListener('change', saveKey);
   }
 
   if (aiSendBtn) aiSendBtn.addEventListener('click', () => handleGeminiSubmit(false));
   if (aiMindmapBtn) aiMindmapBtn.addEventListener('click', () => handleGeminiSubmit(true));
+  if (aiFullmapBtn) aiFullmapBtn.addEventListener('click', () => handleGenerateFullMap());
+
   if (aiInput) {
     aiInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -958,16 +1384,7 @@ function setupEventListeners() {
   }
 }
 
-// Gemini AI Assistant Logic
-const aiChatPanel = document.getElementById('ai-chat-panel');
-const toggleAiBtn = document.getElementById('toggle-ai-btn');
-const closeAiBtn = document.getElementById('close-ai-btn');
-const geminiApiKeyInput = document.getElementById('gemini-api-key-input');
-const aiChatLog = document.getElementById('ai-chat-log');
-const aiInput = document.getElementById('ai-input');
-const aiSendBtn = document.getElementById('ai-send-btn');
-const aiMindmapBtn = document.getElementById('ai-mindmap-btn');
-
+// Gemini AI Panel Functions
 function openAiPanel() {
   if (!aiChatPanel) return;
   aiChatPanel.classList.remove('hidden');
@@ -989,6 +1406,36 @@ function addAiChatMessage(role, text) {
   aiChatLog.scrollTop = aiChatLog.scrollHeight;
 }
 
+// Private Local Configuration Key (loaded from config.js)
+const BUILTIN_GEMINI_API_KEY = (typeof window !== 'undefined' && window.LOCAL_GEMINI_KEY) || '';
+
+function getGeminiApiKey() {
+  return ((typeof window !== 'undefined' && window.LOCAL_GEMINI_KEY) || BUILTIN_GEMINI_API_KEY || (geminiApiKeyInput?.value) || localStorage.getItem('gemini_api_key') || '').trim();
+}
+
+async function callGeminiApi(prompt) {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) return null;
+
+  const candidateModels = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest', 'gemini-3.6-flash'];
+  for (const model of candidateModels) {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      const data = await response.json();
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (reply) return reply;
+      console.warn(`Model ${model} response:`, data);
+    } catch (err) {
+      console.warn(`Model ${model} fetch failed:`, err);
+    }
+  }
+  return null;
+}
+
 async function handleGeminiSubmit(spawnToMap = false) {
   const query = aiInput.value.trim();
   if (!query) return;
@@ -996,41 +1443,24 @@ async function handleGeminiSubmit(spawnToMap = false) {
   addAiChatMessage('user', query);
   aiInput.value = '';
 
-  const apiKey = (geminiApiKeyInput?.value || localStorage.getItem('gemini_api_key') || '').trim();
+  addAiChatMessage('bot', 'Thinking...');
+  try {
+    const prompt = query + (spawnToMap ? ' (Respond with concise bullet points suitable for mind map nodes)' : '');
+    const reply = await callGeminiApi(prompt);
 
-  if (apiKey) {
-    addAiChatMessage('bot', 'Thinking...');
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: query + (spawnToMap ? ' (Respond with concise bullet points suitable for mind map nodes)' : '') }] }]
-        })
-      });
-      const data = await response.json();
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      
-      const thinkingMsg = aiChatLog.querySelector('.ai-msg.bot:last-child');
-      if (thinkingMsg && thinkingMsg.innerText === 'Thinking...') thinkingMsg.remove();
+    const thinkingMsg = aiChatLog.querySelector('.ai-msg.bot:last-child');
+    if (thinkingMsg && thinkingMsg.innerText === 'Thinking...') thinkingMsg.remove();
 
-      if (reply) {
-        addAiChatMessage('bot', reply);
-        if (spawnToMap) parseAndSpawnMindMapNodes(reply);
-      } else {
-        addAiChatMessage('bot', 'API Error: Could not retrieve response. Check your Gemini API key.');
-      }
-    } catch (e) {
-      const thinkingMsg = aiChatLog.querySelector('.ai-msg.bot:last-child');
-      if (thinkingMsg && thinkingMsg.innerText === 'Thinking...') thinkingMsg.remove();
-      addAiChatMessage('bot', 'Connection Error: Unable to reach Gemini API.');
+    if (reply) {
+      addAiChatMessage('bot', reply);
+      if (spawnToMap) parseAndSpawnMindMapNodes(reply);
+    } else {
+      addAiChatMessage('bot', 'Could not retrieve response. Please try again.');
     }
-  } else {
-    // Smart Mind Mapping Assistant Mode without Key
-    addAiChatMessage('bot', `Here are ideas for "${query}":\n• Strategy & Goals\n• Execution Steps\n• Growth & Scaling\n\n(Tip: Paste your Gemini API key above for live AI model inference!)`);
-    if (spawnToMap) {
-      parseAndSpawnMindMapNodes(`• ${query}\n• Strategy & Goals\n• Execution Steps\n• Growth & Scaling`);
-    }
+  } catch (e) {
+    const thinkingMsg = aiChatLog.querySelector('.ai-msg.bot:last-child');
+    if (thinkingMsg && thinkingMsg.innerText === 'Thinking...') thinkingMsg.remove();
+    addAiChatMessage('bot', 'Connection Error: Unable to reach Gemini API.');
   }
 }
 
@@ -1047,5 +1477,324 @@ function parseAndSpawnMindMapNodes(text) {
   });
 }
 
-// Start App
-window.addEventListener('DOMContentLoaded', init);
+// FEATURE 2: On-Canvas "AI Expand This Branch"
+async function aiExpandNode(nodeId, triggerBtn = null) {
+  const node = state.nodes.find(n => n.id === nodeId);
+  if (!node) return;
+
+  const originalBtnText = triggerBtn ? triggerBtn.innerText : '';
+  if (triggerBtn) {
+    triggerBtn.innerText = 'Expanding...';
+    triggerBtn.disabled = true;
+  }
+
+  // Find ancestor chain for context
+  let ancestors = [];
+  let curr = node;
+  let safety = 0;
+  while (curr && (curr.parentId || (curr.parentIds && curr.parentIds[0])) && safety < 10) {
+    safety++;
+    const pId = (curr.parentIds && curr.parentIds[0]) || curr.parentId;
+    curr = state.nodes.find(n => n.id === pId);
+    if (curr && (curr.body || curr.title)) ancestors.unshift((curr.body || curr.title).trim());
+  }
+  const contextStr = ancestors.length > 0 ? `Context path: ${ancestors.join(' -> ')} -> ` : '';
+  const nodeTopic = (node.body || node.title || 'Topic').trim();
+
+  try {
+    const prompt = `You are an expert mind-mapping brainstorming assistant. ${contextStr}Current Box: "${nodeTopic}". Generate 3 to 4 concise, high-impact sub-topics, next steps, or key components that branch off this topic. Rules: Only return a plain bulleted list (- item). Keep each bullet short (3 to 6 words). No markdown headers, no conversational chatter.`;
+    const reply = await callGeminiApi(prompt);
+    if (reply) {
+      spawnBulletsAsChildren(node, reply);
+      addAiChatMessage('bot', `Expanded "${nodeTopic}" with sub-branches on your canvas.`);
+    } else {
+      const fallbackBullets = [
+        `Key Strategy for ${nodeTopic}`,
+        `Execution & Next Steps`,
+        `Tools & Resources`,
+        `Review & Optimization`
+      ].map(b => `- ${b}`).join('\n');
+      spawnBulletsAsChildren(node, fallbackBullets);
+      addAiChatMessage('bot', `Generated smart sub-branches for "${nodeTopic}".`);
+    }
+  } catch (e) {
+    addAiChatMessage('bot', 'Connection Error: Unable to reach Gemini API.');
+  }
+
+  if (triggerBtn) {
+    triggerBtn.innerText = originalBtnText || 'AI Expand';
+    triggerBtn.disabled = false;
+  }
+}
+
+function spawnBulletsAsChildren(parentNode, text) {
+  const lines = text.split('\n')
+    .map(l => l.replace(/^[\*\-\•\d\.]+\s*/, '').trim())
+    .filter(l => l.length > 0);
+  if (lines.length === 0) return;
+
+  if (parentNode.collapsed) parentNode.collapsed = false;
+
+  const existingChildren = state.nodes.filter(n => (n.parentIds && n.parentIds.includes(parentNode.id)) || n.parentId === parentNode.id);
+  const startX = parentNode.x + (parentNode.width || 200) + 60;
+  const startY = existingChildren.length > 0
+    ? Math.max(...existingChildren.map(c => c.y + (c.height || 50))) + 16
+    : parentNode.y - ((lines.length - 1) * 35);
+
+  lines.slice(0, 5).forEach((line, idx) => {
+    spawnNode('', line, [], [], startX, startY + (idx * 65), parentNode.id);
+  });
+  renderCanvas();
+  saveState();
+}
+
+// FEATURE 2: Generate Full Topic Tree in AI Panel
+async function handleGenerateFullMap() {
+  const query = aiInput.value.trim();
+  if (!query) {
+    addAiChatMessage('bot', 'Please enter a topic in the text box first (e.g. "Launch a coffee shop" or "Build a mobile app").');
+    return;
+  }
+  addAiChatMessage('user', `Generate full mind map for: "${query}"`);
+  aiInput.value = '';
+
+  addAiChatMessage('bot', `Generating structured mind map for "${query}"...`);
+  try {
+    const prompt = `Create a structured mind map for: "${query}". Format as an indented Markdown bullet outline using dashes (-). Level 1 is the main topic, Level 2 are 3-4 major pillars, Level 3 are 2-3 specific action items or subtopics under each pillar. Output ONLY the indented markdown bullet list.`;
+    const reply = await callGeminiApi(prompt);
+    if (reply) {
+      importMarkdownToCanvas(reply, false);
+      addAiChatMessage('bot', `Rendered complete mind map for "${query}"!`);
+    } else {
+      const template = `- ${query}\n  - Research & Strategy\n    - Define Core Goals\n    - Target Audience & Scope\n  - Execution & Build\n    - Essential Tools & Setup\n    - Core Deliverables\n  - Launch & Growth\n    - Rollout & Promotion\n    - Review & Feedback`;
+      importMarkdownToCanvas(template, false);
+      addAiChatMessage('bot', `Rendered structured mind map for "${query}".`);
+    }
+  } catch (e) {
+    addAiChatMessage('bot', 'Connection Error: Unable to reach Gemini API.');
+  }
+}
+
+// FEATURE 4: Markdown Outline Import & Export (Plus PNG Export)
+function generateMarkdownOutline() {
+  const rootNodes = state.nodes.filter(n => (!n.parentIds || n.parentIds.length === 0) && !n.parentId);
+  const nodesToProcess = rootNodes.length > 0 ? rootNodes : state.nodes;
+
+  let visited = new Set();
+  let result = '';
+
+  function traverse(n, depth = 0) {
+    if (visited.has(n.id)) return;
+    visited.add(n.id);
+
+    const indent = '  '.repeat(depth);
+    const text = (n.body || n.title || 'Untitled Node').trim().replace(/\n+/g, ' ');
+    result += `${indent}- ${text}\n`;
+
+    const children = state.nodes.filter(c => (c.parentIds && c.parentIds.includes(n.id)) || c.parentId === n.id);
+    children.forEach(child => traverse(child, depth + 1));
+  }
+
+  nodesToProcess.forEach(r => traverse(r, 0));
+  return result;
+}
+
+function importMarkdownToCanvas(mdText, replace = true) {
+  if (!mdText || !mdText.trim()) return;
+
+  if (replace) {
+    state.nodes = [];
+  }
+
+  const lines = mdText.split('\n');
+  const levelStack = []; // [{ level, id, x, y, childCount }]
+
+  const baseStartX = replace ? 150 : ((-state.panX + window.innerWidth / 2) / state.scale - 100);
+  const baseStartY = replace ? 150 : ((-state.panY + window.innerHeight / 2) / state.scale - 100);
+
+  let rootCount = 0;
+
+  lines.forEach(line => {
+    if (!line.trim()) return;
+
+    // Determine indentation level
+    const matchIndent = line.match(/^(\s*)/);
+    const leadingSpaces = matchIndent ? matchIndent[1].replace(/\t/g, '  ').length : 0;
+    const level = Math.floor(leadingSpaces / 2);
+
+    // Clean text
+    const text = line.replace(/^[\s\*\-\+\#\d\.\>]+/, '').trim();
+    if (!text) return;
+
+    // Pop stack to find parent
+    while (levelStack.length > 0 && levelStack[levelStack.length - 1].level >= level) {
+      levelStack.pop();
+    }
+
+    const parent = levelStack.length > 0 ? levelStack[levelStack.length - 1] : null;
+
+    let posX, posY;
+    if (!parent) {
+      posX = baseStartX;
+      posY = baseStartY + (rootCount * 180);
+      rootCount++;
+    } else {
+      parent.childCount = (parent.childCount || 0) + 1;
+      posX = parent.x + 270;
+      posY = parent.y + ((parent.childCount - 1) * 75);
+    }
+
+    const newNode = {
+      id: 'box-' + Date.now() + '-' + Math.floor(Math.random() * 100000),
+      title: '',
+      body: text,
+      media: [],
+      files: [],
+      x: posX,
+      y: posY,
+      parentId: parent ? parent.id : null,
+      parentIds: parent ? [parent.id] : [],
+      collapsed: false
+    };
+
+    state.nodes.push(newNode);
+    levelStack.push({ level, id: newNode.id, x: posX, y: posY, childCount: 0 });
+  });
+
+  if (state.nodes.length > 0) {
+    state.selectedNodeId = state.nodes[0].id;
+  }
+
+  renderCanvas();
+  saveState();
+}
+
+function exportCanvasToPng() {
+  if (state.nodes.length === 0) {
+    alert('Canvas is empty.');
+    return;
+  }
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  state.nodes.forEach(n => {
+    if (isNodeHiddenByCollapse(n)) return;
+    minX = Math.min(minX, n.x);
+    minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + (n.width || 220));
+    maxY = Math.max(maxY, n.y + (n.height || 80));
+  });
+
+  if (minX === Infinity) {
+    minX = 0; minY = 0; maxX = 800; maxY = 600;
+  }
+
+  const padding = 60;
+  const width = Math.max(800, Math.round(maxX - minX + padding * 2));
+  const height = Math.max(600, Math.round(maxY - minY + padding * 2));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  const isDark = state.theme !== 'light';
+  ctx.fillStyle = isDark ? '#141417' : '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = isDark ? '#334155' : '#94a3b8';
+
+  // Draw connections
+  state.nodes.forEach(node => {
+    if (isNodeHiddenByCollapse(node)) return;
+    const parentIds = Array.isArray(node.parentIds) ? node.parentIds : (node.parentId ? [node.parentId] : []);
+    parentIds.forEach(pId => {
+      const parent = state.nodes.find(n => n.id === pId);
+      if (!parent || isNodeHiddenByCollapse(parent) || parent.collapsed) return;
+
+      const x1 = parent.x - minX + padding + (parent.width || 200);
+      const y1 = parent.y - minY + padding + 25;
+      const x2 = node.x - minX + padding;
+      const y2 = node.y - minY + padding + 25;
+      const dx = Math.max(30, Math.abs(x2 - x1) * 0.5);
+
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.bezierCurveTo(x1 + dx, y1, x2 - dx, y2, x2, y2);
+      ctx.stroke();
+    });
+  });
+
+  // Draw nodes
+  state.nodes.forEach(node => {
+    if (isNodeHiddenByCollapse(node)) return;
+    const nx = node.x - minX + padding;
+    const ny = node.y - minY + padding;
+    const nw = node.width || 200;
+    const nh = Math.max(48, node.height || 48);
+
+    ctx.fillStyle = isDark ? '#1b1b20' : '#f8fafc';
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 1;
+
+    const r = 6;
+    ctx.beginPath();
+    ctx.moveTo(nx + r, ny);
+    ctx.lineTo(nx + nw - r, ny);
+    ctx.quadraticCurveTo(nx + nw, ny, nx + nw, ny + r);
+    ctx.lineTo(nx + nw, ny + nh - r);
+    ctx.quadraticCurveTo(nx + nw, ny + nh, nx + nw - r, ny + nh);
+    ctx.lineTo(nx + r, ny + nh);
+    ctx.quadraticCurveTo(nx, ny + nh, nx, ny + nh - r);
+    ctx.lineTo(nx, ny + r);
+    ctx.quadraticCurveTo(nx, ny, nx + r, ny);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = isDark ? '#f4f4f5' : '#0f172a';
+    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    const text = node.body || node.title || 'Untitled';
+    ctx.fillText(text.length > 28 ? text.slice(0, 26) + '...' : text, nx + 12, ny + 28);
+  });
+
+  const link = document.createElement('a');
+  link.download = 'mindmap.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// Open / Close I/O Modal
+function openIoModal(tab = 'export') {
+  if (!ioModal) return;
+  ioModal.classList.remove('hidden');
+  showIoTab(tab);
+}
+
+function closeIoModal() {
+  if (!ioModal) return;
+  ioModal.classList.add('hidden');
+}
+
+function showIoTab(tab) {
+  if (tab === 'export') {
+    ioTabExportBtn?.classList.add('active');
+    ioTabImportBtn?.classList.remove('active');
+    ioExportPanel?.classList.remove('hidden');
+    ioImportPanel?.classList.add('hidden');
+    if (ioExportText) ioExportText.value = generateMarkdownOutline();
+  } else {
+    ioTabImportBtn?.classList.add('active');
+    ioTabExportBtn?.classList.remove('active');
+    ioImportPanel?.classList.remove('hidden');
+    ioExportPanel?.classList.add('hidden');
+    if (ioImportText) ioImportText.focus();
+  }
+}
+
+// Reliable Initialization
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

@@ -1,0 +1,14 @@
+﻿# Private configuration
+config.js
+
+# Reference repositories downloaded for research
+AI-mindmap-generator/
+DeepDiagram/
+Mind-Map-Wizard/
+MindGeniusAI/
+excalidraw/
+markmap/
+openui/
+penpot/
+tldraw/
+xyflow/
