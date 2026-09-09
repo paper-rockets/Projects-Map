@@ -19,6 +19,9 @@ const defaultState = {
       body: 'Central Topic',
       media: [],
       files: [],
+      color: '#e67e22',
+      hasCheckbox: false,
+      isCompleted: false,
       x: 240,
       y: 200,
       parentId: null,
@@ -42,6 +45,13 @@ const drawerOverlay = document.getElementById('drawer-overlay');
 const ideaSearch = document.getElementById('idea-search');
 const ideasList = document.getElementById('ideas-list');
 const zoomLevelEl = document.getElementById('zoom-level');
+
+// Floating Node Context Menu & Attachment Pickers
+const nodeContextMenu = document.getElementById('node-context-menu');
+let contextActiveNodeId = null;
+const hiddenImagePicker = document.getElementById('hidden-image-picker');
+const hiddenFilePicker = document.getElementById('hidden-file-picker');
+const BRANCH_COLORS = ['#e67e22', '#00cec9', '#e84393', '#6c5ce7', '#2ecc71', '#f1c40f', '#0984e3'];
 
 // File Upload Elements
 const imageFileInput = document.createElement('input');
@@ -117,6 +127,7 @@ function cycleTheme() {
 function init() {
   try { setTheme(state.theme || 'dark'); } catch (e) { console.error('Theme error:', e); }
   try { setupEventListeners(); } catch (e) { console.error('setupEventListeners error:', e); }
+  try { setupContextMenu(); } catch (e) { console.error('setupContextMenu error:', e); }
   try { setupGlobalPointerMovement(); } catch (e) { console.error('setupGlobalPointerMovement error:', e); }
   try { setupClipboardAndFileDrop(); } catch (e) { console.error('setupClipboardAndFileDrop error:', e); }
   try { setupFileInputListeners(); } catch (e) { console.error('setupFileInputListeners error:', e); }
@@ -149,6 +160,9 @@ function loadFromLocalStorage() {
     const parsed = JSON.parse(raw);
     const loadedNodes = (parsed.nodes || defaultState.nodes).map(n => ({
       ...n,
+      color: n.color || null,
+      hasCheckbox: !!n.hasCheckbox,
+      isCompleted: !!n.isCompleted,
       parentIds: Array.isArray(n.parentIds) ? n.parentIds : (n.parentId ? [n.parentId] : []),
       collapsed: !!n.collapsed
     }));
@@ -321,6 +335,170 @@ function focusNodeText(nodeId) {
   });
 }
 
+function selectNode(nodeId) {
+  state.selectedNodeId = nodeId;
+  document.querySelectorAll('.text-box-card.selected').forEach(c => c.classList.remove('selected'));
+  const target = nodesLayer.querySelector(`[data-node-id="${nodeId}"]`);
+  if (target) target.classList.add('selected');
+  requestAnimationFrame(renderConnections);
+}
+
+function openNodeContextMenu(node, clientX, clientY) {
+  if (!nodeContextMenu) return;
+  contextActiveNodeId = node.id;
+
+  nodeContextMenu.querySelectorAll('.color-swatch-dot').forEach(dot => {
+    dot.classList.toggle('active-swatch', dot.dataset.color === node.color);
+  });
+
+  nodeContextMenu.classList.remove('context-menu-hidden');
+
+  const menuW = 200;
+  const menuH = 280;
+  const pad = 12;
+  let posX = clientX + 8;
+  let posY = clientY + 8;
+
+  if (posX + menuW > window.innerWidth - pad) {
+    posX = Math.max(pad, clientX - menuW - 8);
+  }
+  if (posY + menuH > window.innerHeight - pad) {
+    posY = Math.max(pad, window.innerHeight - menuH - pad);
+  }
+
+  nodeContextMenu.style.left = posX + 'px';
+  nodeContextMenu.style.top = posY + 'px';
+}
+
+function hideNodeContextMenu() {
+  if (nodeContextMenu) {
+    nodeContextMenu.classList.add('context-menu-hidden');
+    contextActiveNodeId = null;
+  }
+}
+
+function setupContextMenu() {
+  if (!nodeContextMenu) return;
+
+  // Swatch clicks
+  nodeContextMenu.querySelectorAll('.color-swatch-dot').forEach(dot => {
+    dot.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const color = dot.dataset.color;
+      if (!contextActiveNodeId) return;
+      const node = state.nodes.find(n => n.id === contextActiveNodeId);
+      if (node) {
+        node.color = color;
+        saveState();
+        renderCanvas();
+        requestAnimationFrame(renderConnections);
+      }
+      hideNodeContextMenu();
+    });
+  });
+
+  // Action clicks
+  nodeContextMenu.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn || !contextActiveNodeId) return;
+    e.stopPropagation();
+    const action = btn.dataset.action;
+    const node = state.nodes.find(n => n.id === contextActiveNodeId);
+    if (!node) return;
+
+    if (action === 'add-branch') {
+      hideNodeContextMenu();
+      const child = createChildNode(node);
+      if (child) {
+        if (node.color) child.color = node.color;
+        renderCanvas();
+        saveState();
+        focusNodeText(child.id);
+      }
+    } else if (action === 'add-image') {
+      hideNodeContextMenu();
+      if (hiddenImagePicker) {
+        activeNodeForImageUpload = node;
+        hiddenImagePicker.click();
+      }
+    } else if (action === 'add-file') {
+      hideNodeContextMenu();
+      if (hiddenFilePicker) {
+        activeNodeForFileUpload = node;
+        hiddenFilePicker.click();
+      }
+    } else if (action === 'add-note') {
+      hideNodeContextMenu();
+      const child = createChildNode(node);
+      if (child) {
+        child.body = 'Note: ';
+        if (node.color) child.color = node.color;
+        renderCanvas();
+        saveState();
+        focusNodeText(child.id);
+      }
+    } else if (action === 'toggle-checkbox') {
+      hideNodeContextMenu();
+      node.hasCheckbox = !node.hasCheckbox;
+      renderCanvas();
+      saveState();
+    } else if (action === 'edit-node') {
+      hideNodeContextMenu();
+      focusNodeText(node.id);
+    } else if (action === 'delete-node') {
+      hideNodeContextMenu();
+      deleteNodeById(node.id);
+    }
+  });
+
+  // Hidden attachment pickers
+  if (hiddenImagePicker) {
+    hiddenImagePicker.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file || !activeNodeForImageUpload) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        activeNodeForImageUpload.media = activeNodeForImageUpload.media || [];
+        activeNodeForImageUpload.media.push({ type: 'image', url: evt.target.result, name: file.name });
+        renderCanvas();
+        saveState();
+      };
+      reader.readAsDataURL(file);
+      hiddenImagePicker.value = '';
+    });
+  }
+
+  if (hiddenFilePicker) {
+    hiddenFilePicker.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file || !activeNodeForFileUpload) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        activeNodeForFileUpload.files = activeNodeForFileUpload.files || [];
+        activeNodeForFileUpload.files.push({ name: file.name, url: evt.target.result });
+        renderCanvas();
+        saveState();
+      };
+      reader.readAsDataURL(file);
+      hiddenFilePicker.value = '';
+    });
+  }
+
+  // Dismiss context menu on pointer down outside
+  document.addEventListener('pointerdown', (e) => {
+    if (nodeContextMenu && !e.target.closest('#node-context-menu')) {
+      hideNodeContextMenu();
+    }
+  });
+
+  // Dismiss on Escape key
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      hideNodeContextMenu();
+    }
+  });
+}
+
 function openBoxModal(node) {
   if (!node) return;
   activeModalNodeId = node.id;
@@ -475,15 +653,23 @@ function renderSidebar() {
   });
 }
 
-// Spawn Node (EVERY box has a Title field!)
-function spawnNode(title = '', body = '', media = [], files = [], x = null, y = null, parentId = null) {
+// Spawn Node (Supports branch color inheritance and task checkboxes)
+function spawnNode(title = '', body = '', media = [], files = [], x = null, y = null, parentId = null, color = null) {
   const pIds = parentId ? [parentId] : [];
+  let nodeColor = color;
+  if (!nodeColor && parentId) {
+    const parent = state.nodes.find(n => n.id === parentId);
+    if (parent && parent.color) nodeColor = parent.color;
+  }
   const newNode = {
     id: 'box-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
     title: title || '',
     body: body || '',
     media: media || [],
     files: files || [],
+    color: nodeColor || null,
+    hasCheckbox: false,
+    isCompleted: false,
     x: x !== null ? x : 200,
     y: y !== null ? y : 200,
     parentId: parentId,
@@ -498,7 +684,7 @@ function spawnNode(title = '', body = '', media = [], files = [], x = null, y = 
   return newNode;
 }
 
-// Render Canvas Text Boxes (EVERY Box Has a Title & Body Text Field)
+// Render Canvas Text Boxes
 function renderCanvas() {
   nodesLayer.innerHTML = '';
 
@@ -506,12 +692,17 @@ function renderCanvas() {
     const isHidden = isNodeHiddenByCollapse(node);
 
     const card = document.createElement('div');
-    card.className = `text-box-card ${state.selectedNodeId === node.id ? 'selected' : ''} ${isHidden ? 'node-collapsed-hidden' : ''}`;
+    card.className = `text-box-card ${state.selectedNodeId === node.id ? 'selected' : ''} ${isHidden ? 'node-collapsed-hidden' : ''} ${node.isCompleted ? 'completed' : ''}`;
     card.style.left = `${node.x}px`;
     card.style.top = `${node.y}px`;
     if (node.width) card.style.width = `${node.width}px`;
     if (node.height) card.style.height = `${node.height}px`;
     card.dataset.nodeId = node.id;
+
+    if (node.color) {
+      card.style.borderLeft = `4px solid ${node.color}`;
+      card.dataset.hasColor = 'true';
+    }
 
     // Collapse / Expand Pill on right edge if node has children
     const childNodes = state.nodes.filter(n => (n.parentIds && n.parentIds.includes(node.id)) || n.parentId === node.id);
@@ -567,6 +758,10 @@ function renderCanvas() {
       filesHtml += '</div>';
     }
 
+    const checkboxHtml = node.hasCheckbox ? `
+      <input type="checkbox" class="node-checkbox" ${node.isCompleted ? 'checked' : ''} title="Mark done">
+    ` : '';
+
     const cardContent = document.createElement('div');
     cardContent.innerHTML = `
       <div class="port-dot left" title="Connect Here"></div>
@@ -574,19 +769,23 @@ function renderCanvas() {
       <div class="port-dot top" title="Drag Wire to Connect"></div>
       <div class="port-dot bottom" title="Drag Wire to Connect"></div>
 
-      <div class="box-body" contenteditable="true" data-placeholder="Type text here...">${escapeHtml(node.body || '')}</div>
+      <div style="display:flex;align-items:flex-start;gap:4px;">
+        ${checkboxHtml}
+        <div class="box-body" contenteditable="true" data-placeholder="Type text here...">${escapeHtml(node.body || '')}</div>
+      </div>
 
       ${mediaHtml}
       ${filesHtml}
 
-      <div class="box-actions">
-        <button class="box-btn open-modal-btn">Modal</button>
-        <button class="box-btn add-child-btn">+ Child</button>
-        <button class="box-btn ai-expand-btn" title="Expand with Gemini AI">AI Expand</button>
-        <button class="box-btn add-img-btn">+ Image</button>
-        <button class="box-btn add-vid-btn">+ Video</button>
-        <button class="box-btn add-file-btn">+ File</button>
-        <button class="box-btn delete delete-btn">Delete</button>
+      <div class="box-strip">
+        <button type="button" class="strip-btn add-child-btn" title="Add Branch (+)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>+ Branch</span>
+        </button>
+        <button type="button" class="strip-btn options-btn" title="Color & Options">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg>
+          <span>Options</span>
+        </button>
       </div>
       <div class="resize-handle" title="Resize Box"></div>
     `;
@@ -618,26 +817,42 @@ function renderCanvas() {
       }
     });
 
+    // Checkbox toggle
+    const chk = card.querySelector('.node-checkbox');
+    if (chk) {
+      chk.addEventListener('change', (e) => {
+        e.stopPropagation();
+        node.isCompleted = chk.checked;
+        card.classList.toggle('completed', node.isCompleted);
+        saveState();
+      });
+      chk.addEventListener('pointerdown', (e) => e.stopPropagation());
+    }
+
+    // Double click card opens details modal
     card.addEventListener('dblclick', (e) => {
       e.stopPropagation();
       openBoxModal(node);
     });
 
-    const openModalBtn = card.querySelector('.open-modal-btn');
-    if (openModalBtn) {
-      openModalBtn.addEventListener('click', (e) => {
+    // Options button opens floating context menu
+    const optBtn = card.querySelector('.options-btn');
+    if (optBtn) {
+      optBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        openBoxModal(node);
+        selectNode(node.id);
+        const rect = optBtn.getBoundingClientRect();
+        openNodeContextMenu(node, rect.left, rect.bottom + 6);
       });
     }
 
-    const aiExpBtn = card.querySelector('.ai-expand-btn');
-    if (aiExpBtn) {
-      aiExpBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        aiExpandNode(node.id, aiExpBtn);
-      });
-    }
+    // Right-click opens floating context menu
+    card.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      selectNode(node.id);
+      openNodeContextMenu(node, e.clientX, e.clientY);
+    });
 
     const handle = card.querySelector('.resize-handle');
     if (handle) {
@@ -684,10 +899,10 @@ function renderCanvas() {
     });
 
     card.addEventListener('pointerdown', (e) => {
-      if (e.target === bodyEl || e.target.closest('button') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.port-dot') || e.target.closest('.resize-handle') || e.target.closest('.collapse-toggle-btn')) return;
+      if (e.target === bodyEl || e.target.closest('button') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.port-dot') || e.target.closest('.resize-handle') || e.target.closest('.collapse-toggle-btn') || e.target.classList.contains('node-checkbox')) return;
       e.stopPropagation();
 
-      state.selectedNodeId = node.id;
+      selectNode(node.id);
       draggingCardNode = node;
 
       const canvasRect = canvasContainer.getBoundingClientRect();
@@ -696,9 +911,6 @@ function renderCanvas() {
 
       grabOffsetX = pointerCanvasX - node.x;
       grabOffsetY = pointerCanvasY - node.y;
-
-      document.querySelectorAll('.text-box-card.selected').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
     });
 
     const addChildBtn = card.querySelector('.add-child-btn');
@@ -707,41 +919,6 @@ function renderCanvas() {
         e.stopPropagation();
         const child = createChildNode(node);
         if (child) focusNodeText(child.id);
-      });
-    }
-
-    const addImgBtn = card.querySelector('.add-img-btn');
-    if (addImgBtn) {
-      addImgBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        activeNodeForImageUpload = node;
-        imageFileInput.click();
-      });
-    }
-
-    const addVidBtn = card.querySelector('.add-vid-btn');
-    if (addVidBtn) {
-      addVidBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        activeNodeForVideoUpload = node;
-        videoFileInput.click();
-      });
-    }
-
-    const addFileBtn = card.querySelector('.add-file-btn');
-    if (addFileBtn) {
-      addFileBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        activeNodeForFileUpload = node;
-        docFileInput.click();
-      });
-    }
-
-    const deleteBtn = card.querySelector('.delete-btn');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        deleteNodeById(node.id);
       });
     }
 
@@ -829,7 +1006,7 @@ function escapeHtml(str) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// Render Bezier Connections (Multi-Connector Support)
+// Render Bezier Connections (Multi-Connector & Dynamic Branch Color Coding)
 function renderConnections() {
   connectionsGroup.innerHTML = '';
 
@@ -848,18 +1025,33 @@ function renderConnections() {
       const parentH = parentEl ? parentEl.offsetHeight : 34;
       const parentW = parentEl ? parentEl.offsetWidth : 170;
       const childH = childEl ? childEl.offsetHeight : 34;
+      const childW = childEl ? childEl.offsetWidth : 170;
 
-      const x1 = parent.x + parentW;
-      const y1 = parent.y + (parentH / 2);
-      const x2 = node.x;
-      const y2 = node.y + (childH / 2);
+      let x1, y1, x2, y2;
+      if (node.x >= parent.x) {
+        x1 = parent.x + parentW;
+        y1 = parent.y + (parentH / 2);
+        x2 = node.x;
+        y2 = node.y + (childH / 2);
+      } else {
+        x1 = parent.x;
+        y1 = parent.y + (parentH / 2);
+        x2 = node.x + childW;
+        y2 = node.y + (childH / 2);
+      }
 
       const dx = Math.max(30, Math.abs(x2 - x1) * 0.5);
 
-      const pathD = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+      const pathD = `M ${x1} ${y1} C ${x1 + (node.x >= parent.x ? dx : -dx)} ${y1}, ${x2 + (node.x >= parent.x ? -dx : dx)} ${y2}, ${x2} ${y2}`;
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', pathD);
-      path.setAttribute('class', 'connection-path');
+      path.setAttribute('class', 'connection-path' + (node.id === state.selectedNodeId || parent.id === state.selectedNodeId ? ' active' : ''));
+
+      const connColor = node.color || parent.color;
+      if (connColor) {
+        path.style.stroke = connColor;
+        path.style.strokeWidth = (node.id === state.selectedNodeId || parent.id === state.selectedNodeId) ? '3px' : '2.2px';
+      }
 
       path.style.pointerEvents = 'stroke';
       path.style.cursor = 'pointer';
@@ -892,6 +1084,9 @@ function renderConnections() {
       const tempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       tempPath.setAttribute('d', pathD);
       tempPath.setAttribute('class', 'connection-path active');
+      if (srcNode.color) {
+        tempPath.style.stroke = srcNode.color;
+      }
       connectionsGroup.appendChild(tempPath);
     }
   }

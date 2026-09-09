@@ -815,3 +815,192 @@ html, body, #app {
   margin-right: auto;
   cursor: pointer;
 }
+
+/* ==========================================================================
+   Node Floating Context Menu (Color Dots + Options)
+   ========================================================================== */
+#node-context-menu {
+  position: fixed;
+  z-index: 250;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  padding: 10px;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  user-select: none;
+  animation: menuPop 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#node-context-menu.context-menu-hidden {
+  display: none !important;
+}
+
+@keyframes menuPop {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Color Coding Palette Swatches Row */
+.context-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 6px;
+}
+
+.color-swatch-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background-color: var(--swatch-color);
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.12s;
+  padding: 0;
+  outline: none;
+}
+
+.color-swatch-dot:hover {
+  transform: scale(1.25);
+  border-color: #ffffff;
+}
+
+.color-swatch-dot.active-swatch {
+  transform: scale(1.15);
+  border-color: #ffffff;
+  box-shadow: 0 0 8px var(--swatch-color);
+}
+
+.context-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
+
+.context-menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.context-menu-item:hover {
+  background: var(--bg-box-hover);
+}
+
+.context-menu-item svg {
+  stroke: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.context-menu-item:hover svg {
+  stroke: var(--text-main);
+}
+
+.context-menu-item.item-danger {
+  color: #ef4444;
+}
+
+.context-menu-item.item-danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.context-menu-item.item-danger svg {
+  stroke: #ef4444;
+}
+
+/* Card Color Border Indicator */
+.text-box-card[data-has-color="true"] {
+  border-left-width: 4px;
+}
+
+/* Card Checkbox */
+.node-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--text-muted);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-right: 6px;
+  position: relative;
+  transition: all 0.12s ease;
+}
+
+.node-checkbox:checked {
+  background: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.node-checkbox:checked::after {
+  content: '';
+  width: 3px;
+  height: 7px;
+  border: solid #ffffff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+  margin-bottom: 2px;
+}
+
+.text-box-card.completed .box-body {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Clean Card Action Strip with + Branch & Options */
+.box-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 3px;
+  border-top: 1px solid var(--border-card);
+  gap: 4px;
+}
+
+.strip-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.12s ease;
+}
+
+.strip-btn:hover {
+  background: var(--bg-box-hover);
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+
