@@ -6,6 +6,7 @@ const defaultState = {
   panX: 0,
   panY: 0,
   selectedNodeId: null,
+  theme: 'dark',
   ideas: [],
   nodes: [
     {
@@ -23,62 +24,36 @@ const defaultState = {
 
 let state = loadFromLocalStorage();
 
-// Wire Link State
-let isLinkingWire = false;
-let linkingSourceNodeId = null;
-let linkingTempPos = { x: 0, y: 0 };
+// Theme Management
+function setTheme(themeName) {
+  if (!['dark', 'light', 'grey'].includes(themeName)) themeName = 'dark';
+  state.theme = themeName;
+  document.documentElement.setAttribute('data-theme', themeName);
 
-// Pointer & Drag State
-let draggingCardNode = null;
-let grabOffsetX = 0;
-let grabOffsetY = 0;
+  const btnText = document.getElementById('theme-btn-text');
+  if (btnText) {
+    const labels = { dark: 'Dark', light: 'Light', grey: 'Grey' };
+    btnText.innerText = labels[themeName] || 'Theme';
+  }
 
-// Box Resize State
-let isResizingCardNode = null;
-let resizeStartPointerX = 0;
-let resizeStartPointerY = 0;
-let resizeStartWidth = 0;
-let resizeStartHeight = 0;
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) {
+    const colors = { dark: '#141417', light: '#ffffff', grey: '#cbd5e1' };
+    metaTheme.setAttribute('content', colors[themeName] || '#141417');
+  }
+}
 
-const activePointers = new Map();
-let initialPinchDist = 0;
-let initialPinchScale = 1;
-
-// Hidden File Pickers
-let activeNodeForImageUpload = null;
-let activeNodeForVideoUpload = null;
-let activeNodeForFileUpload = null;
-
-const imageFileInput = document.createElement('input');
-imageFileInput.type = 'file';
-imageFileInput.accept = 'image/*';
-
-const videoFileInput = document.createElement('input');
-videoFileInput.type = 'file';
-videoFileInput.accept = 'video/*';
-
-const docFileInput = document.createElement('input');
-docFileInput.type = 'file';
-docFileInput.accept = '*/*';
-
-const mediaPickerGeneral = document.createElement('input');
-mediaPickerGeneral.type = 'file';
-mediaPickerGeneral.accept = 'image/*,video/*';
-
-// DOM Elements
-const canvasContainer = document.getElementById('canvas-container');
-const nodesLayer = document.getElementById('nodes-layer');
-const connectionsGroup = document.getElementById('connections-group');
-const sidebar = document.getElementById('sidebar');
-const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
-const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-const drawerOverlay = document.getElementById('drawer-overlay');
-const ideasList = document.getElementById('ideas-list');
-const ideaSearch = document.getElementById('idea-search');
-const zoomLevelEl = document.getElementById('zoom-level');
+function cycleTheme() {
+  const order = ['dark', 'light', 'grey'];
+  const currentIdx = order.indexOf(state.theme || 'dark');
+  const nextTheme = order[(currentIdx + 1) % order.length];
+  setTheme(nextTheme);
+  saveState();
+}
 
 // Init
 function init() {
+  setTheme(state.theme || 'dark');
   renderSidebar();
   renderCanvas();
   setupGlobalPointerMovement();
@@ -96,7 +71,8 @@ function saveState() {
       ideas: state.ideas,
       panX: state.panX,
       panY: state.panY,
-      scale: state.scale
+      scale: state.scale,
+      theme: state.theme || 'dark'
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
   } catch (e) {
@@ -116,6 +92,7 @@ function loadFromLocalStorage() {
     return {
       ...defaultState,
       ...parsed,
+      theme: parsed.theme || 'dark',
       nodes: loadedNodes,
       ideas: parsed.ideas || []
     };
@@ -943,6 +920,14 @@ function setupEventListeners() {
     renderCanvas();
     saveState();
   });
+
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cycleTheme();
+    });
+  }
 }
 
 // Start App

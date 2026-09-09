@@ -1,9 +1,11 @@
-:root {
+:root, [data-theme="dark"] {
   --bg-canvas: #141417;
   --bg-sidebar: #19191e;
   --bg-box: #1b1b20;
   --bg-box-hover: #22222a;
+  --bg-floating: rgba(24, 24, 28, 0.85);
   --border-color: rgba(255, 255, 255, 0.08);
+  --border-card: rgba(255, 255, 255, 0.04);
   --border-color-focus: #38bdf8;
   
   --text-main: #f4f4f5;
@@ -11,9 +13,52 @@
   --text-dim: #64748b;
 
   --accent-cyan: #38bdf8;
+  --wire-color: #334155;
+  --dot-grid: rgba(255, 255, 255, 0.03);
+  --input-bg: #121216;
 
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --sidebar-width: 280px;
+}
+
+[data-theme="light"] {
+  --bg-canvas: #ffffff;
+  --bg-sidebar: #f8fafc;
+  --bg-box: #ffffff;
+  --bg-box-hover: #f1f5f9;
+  --bg-floating: rgba(255, 255, 255, 0.92);
+  --border-color: rgba(0, 0, 0, 0.12);
+  --border-card: rgba(0, 0, 0, 0.08);
+  --border-color-focus: #0284c7;
+  
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-dim: #64748b;
+
+  --accent-cyan: #0284c7;
+  --wire-color: #94a3b8;
+  --dot-grid: rgba(0, 0, 0, 0.06);
+  --input-bg: #f1f5f9;
+}
+
+[data-theme="grey"] {
+  --bg-canvas: #cbd5e1;
+  --bg-sidebar: #94a3b8;
+  --bg-box: #e2e8f0;
+  --bg-box-hover: #cbd5e1;
+  --bg-floating: rgba(241, 245, 249, 0.92);
+  --border-color: rgba(0, 0, 0, 0.15);
+  --border-card: rgba(0, 0, 0, 0.12);
+  --border-color-focus: #2563eb;
+  
+  --text-main: #0f172a;
+  --text-muted: #334155;
+  --text-dim: #475569;
+
+  --accent-cyan: #2563eb;
+  --wire-color: #475569;
+  --dot-grid: rgba(0, 0, 0, 0.08);
+  --input-bg: #cbd5e1;
 }
 
 * {
@@ -43,12 +88,12 @@ html, body, #app {
   align-items: center;
   gap: 6px;
   padding: 8px;
-  background: rgba(24, 24, 28, 0.85);
+  background: var(--bg-floating);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   backdrop-filter: blur(16px);
   z-index: 100;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .tool-btn {
@@ -65,7 +110,7 @@ html, body, #app {
 }
 
 .tool-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(128, 128, 128, 0.15);
   color: var(--text-main);
 }
 
@@ -86,12 +131,12 @@ html, body, #app {
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  background: rgba(24, 24, 28, 0.85);
+  background: var(--bg-floating);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   backdrop-filter: blur(16px);
   z-index: 100;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .pill-btn {
@@ -132,7 +177,7 @@ html, body, #app {
   flex-direction: column;
   transform: translateX(-100%);
   transition: transform 0.22s ease-out;
-  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
 }
 
 .sidebar.open { transform: translateX(0); }
@@ -149,7 +194,7 @@ html, body, #app {
 .sidebar-actions { padding: 10px 14px; display: flex; }
 .sidebar-actions input {
   width: 100%;
-  background: #121216;
+  background: var(--input-bg);
   border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 8px 10px;
@@ -191,7 +236,7 @@ html, body, #app {
   cursor: grab;
   touch-action: none;
   background-size: 32px 32px;
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1px);
 }
 
 .canvas-container.panning { cursor: grabbing; }
@@ -206,7 +251,7 @@ html, body, #app {
 
 .connection-path {
   fill: none;
-  stroke: #334155;
+  stroke: var(--wire-color);
   stroke-width: 2px;
   stroke-linecap: round;
 }
