@@ -928,6 +928,123 @@ function setupEventListeners() {
       cycleTheme();
     });
   }
+
+  // Gemini AI Panel Listeners
+  if (toggleAiBtn) {
+    toggleAiBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (aiChatPanel && !aiChatPanel.classList.contains('hidden')) closeAiPanel();
+      else openAiPanel();
+    });
+  }
+
+  if (closeAiBtn) closeAiBtn.addEventListener('click', closeAiPanel);
+
+  if (geminiApiKeyInput) {
+    geminiApiKeyInput.addEventListener('change', () => {
+      localStorage.setItem('gemini_api_key', geminiApiKeyInput.value.trim());
+    });
+  }
+
+  if (aiSendBtn) aiSendBtn.addEventListener('click', () => handleGeminiSubmit(false));
+  if (aiMindmapBtn) aiMindmapBtn.addEventListener('click', () => handleGeminiSubmit(true));
+  if (aiInput) {
+    aiInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleGeminiSubmit(false);
+      }
+    });
+  }
+}
+
+// Gemini AI Assistant Logic
+const aiChatPanel = document.getElementById('ai-chat-panel');
+const toggleAiBtn = document.getElementById('toggle-ai-btn');
+const closeAiBtn = document.getElementById('close-ai-btn');
+const geminiApiKeyInput = document.getElementById('gemini-api-key-input');
+const aiChatLog = document.getElementById('ai-chat-log');
+const aiInput = document.getElementById('ai-input');
+const aiSendBtn = document.getElementById('ai-send-btn');
+const aiMindmapBtn = document.getElementById('ai-mindmap-btn');
+
+function openAiPanel() {
+  if (!aiChatPanel) return;
+  aiChatPanel.classList.remove('hidden');
+  const savedKey = localStorage.getItem('gemini_api_key') || '';
+  if (geminiApiKeyInput) geminiApiKeyInput.value = savedKey;
+}
+
+function closeAiPanel() {
+  if (!aiChatPanel) return;
+  aiChatPanel.classList.add('hidden');
+}
+
+function addAiChatMessage(role, text) {
+  if (!aiChatLog) return;
+  const msg = document.createElement('div');
+  msg.className = `ai-msg ${role}`;
+  msg.innerText = text;
+  aiChatLog.appendChild(msg);
+  aiChatLog.scrollTop = aiChatLog.scrollHeight;
+}
+
+async function handleGeminiSubmit(spawnToMap = false) {
+  const query = aiInput.value.trim();
+  if (!query) return;
+
+  addAiChatMessage('user', query);
+  aiInput.value = '';
+
+  const apiKey = (geminiApiKeyInput?.value || localStorage.getItem('gemini_api_key') || '').trim();
+
+  if (apiKey) {
+    addAiChatMessage('bot', 'Thinking...');
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: query + (spawnToMap ? ' (Respond with concise bullet points suitable for mind map nodes)' : '') }] }]
+        })
+      });
+      const data = await response.json();
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      const thinkingMsg = aiChatLog.querySelector('.ai-msg.bot:last-child');
+      if (thinkingMsg && thinkingMsg.innerText === 'Thinking...') thinkingMsg.remove();
+
+      if (reply) {
+        addAiChatMessage('bot', reply);
+        if (spawnToMap) parseAndSpawnMindMapNodes(reply);
+      } else {
+        addAiChatMessage('bot', 'API Error: Could not retrieve response. Check your Gemini API key.');
+      }
+    } catch (e) {
+      const thinkingMsg = aiChatLog.querySelector('.ai-msg.bot:last-child');
+      if (thinkingMsg && thinkingMsg.innerText === 'Thinking...') thinkingMsg.remove();
+      addAiChatMessage('bot', 'Connection Error: Unable to reach Gemini API.');
+    }
+  } else {
+    // Smart Mind Mapping Assistant Mode without Key
+    addAiChatMessage('bot', `Here are ideas for "${query}":\n• Strategy & Goals\n• Execution Steps\n• Growth & Scaling\n\n(Tip: Paste your Gemini API key above for live AI model inference!)`);
+    if (spawnToMap) {
+      parseAndSpawnMindMapNodes(`• ${query}\n• Strategy & Goals\n• Execution Steps\n• Growth & Scaling`);
+    }
+  }
+}
+
+function parseAndSpawnMindMapNodes(text) {
+  const lines = text.split('\n').map(l => l.replace(/^[\*\-\•\d\.]+\s*/, '').trim()).filter(l => l.length > 0);
+  if (lines.length === 0) return;
+
+  const targetNode = state.nodes.find(n => n.id === state.selectedNodeId) || state.nodes[0];
+  const rootX = targetNode ? targetNode.x + 240 : (-state.panX + window.innerWidth / 2) / state.scale - 110;
+  const rootY = targetNode ? targetNode.y : (-state.panY + window.innerHeight / 2) / state.scale - 50;
+
+  lines.slice(0, 5).forEach((line, idx) => {
+    spawnNode('', line, [], [], rootX, rootY + (idx * 50), targetNode ? targetNode.id : null);
+  });
 }
 
 // Start App

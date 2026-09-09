@@ -30,6 +30,9 @@
         <span>Auto</span>
       </button>
       <div class="tool-divider"></div>
+      <button id="toggle-ai-btn" class="tool-btn" title="Gemini AI Assistant">
+        <span>AI</span>
+      </button>
       <button id="theme-toggle-btn" class="tool-btn" title="Toggle Theme">
         <span id="theme-btn-text">Dark</span>
       </button>
@@ -60,6 +63,27 @@
       </div>
       <div id="ideas-list" class="ideas-list">
         <!-- Idea items -->
+      </div>
+    </aside>
+
+    <!-- Collapsible Gemini AI Chat Panel -->
+    <aside id="ai-chat-panel" class="ai-chat-panel hidden">
+      <div class="ai-panel-header">
+        <h2>Gemini AI Assistant</h2>
+        <button id="close-ai-btn" class="icon-btn">&times;</button>
+      </div>
+      <div class="ai-key-section">
+        <input type="password" id="gemini-api-key-input" placeholder="Paste Gemini API Key (optional)" />
+      </div>
+      <div id="ai-chat-log" class="ai-chat-log">
+        <div class="ai-msg bot">Hi! I am your Gemini AI Assistant. Ask me anything or click "+ To Map" to spawn AI ideas on your mind map!</div>
+      </div>
+      <div class="ai-chat-input-area">
+        <textarea id="ai-input" placeholder="Ask Gemini or type 'Generate ideas for...'"></textarea>
+        <div class="ai-input-actions">
+          <button id="ai-send-btn" class="box-btn">Send</button>
+          <button id="ai-mindmap-btn" class="box-btn">+ To Map</button>
+        </div>
       </div>
     </aside>
 
