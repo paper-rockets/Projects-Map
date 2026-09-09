@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>Ultra Minimal Studio Mind Map</title>
+  <meta name="theme-color" content="#141417">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Floating Vertical Left Toolbar Capsule (Matching Reference Images) -->
+    <nav class="floating-toolbar-left">
+      <button id="toggle-sidebar-btn" class="tool-btn" title="Ideas List">
+        <span>Ideas</span>
+      </button>
+      <div class="tool-divider"></div>
+      <button id="add-root-node-btn" class="tool-btn" title="Add Text Box">
+        <span>+ Box</span>
+      </button>
+      <button id="add-media-node-btn" class="tool-btn" title="Add Media">
+        <span>+ Media</span>
+      </button>
+      <button id="auto-layout-btn" class="tool-btn" title="Auto Layout">
+        <span>Auto</span>
+      </button>
+    </nav>
+
+    <!-- Floating Bottom Center Control Pill (Matching Reference Images) -->
+    <div class="floating-pill-bottom">
+      <button id="zoom-out-btn" class="pill-btn">-</button>
+      <span id="zoom-level" class="pill-text">100%</span>
+      <button id="zoom-in-btn" class="pill-btn">+</button>
+      <button id="zoom-reset-btn" class="pill-btn">Reset</button>
+    </div>
+
+    <!-- Mobile Drawer Overlay -->
+    <div id="drawer-overlay" class="drawer-overlay hidden"></div>
+
+    <!-- Collapsible Left Sidebar (Ideas List) -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <h2>Ideas & Items</h2>
+        <button id="close-sidebar-btn" class="icon-btn">&times;</button>
+      </div>
+      <div class="sidebar-actions">
+        <input type="text" id="idea-search" placeholder="Search ideas..." />
+      </div>
+      <div class="sidebar-hint">
+        <span>Click any item to drop onto canvas</span>
+      </div>
+      <div id="ideas-list" class="ideas-list">
+        <!-- Idea items -->
+      </div>
+    </aside>
+
+    <!-- Canvas Container -->
+    <main id="canvas-container" class="canvas-container">
+      <svg id="svg-layer" class="svg-layer">
+        <g id="connections-group"></g>
+      </svg>
+      <div id="nodes-layer" class="nodes-layer">
+        <!-- Plain text boxes dynamically rendered -->
+      </div>
+    <!-- Box Modal Overlay -->
+    <div id="box-modal" class="box-modal-overlay hidden">
+      <div class="box-modal-card">
+        <div class="box-modal-header">
+          <span class="box-modal-title">Box Details</span>
+          <button id="close-modal-btn" class="box-modal-close">&times;</button>
+        </div>
+        <div id="box-modal-body" class="box-modal-body" contenteditable="true" data-placeholder="Type text here..."></div>
+        <div id="box-modal-media" class="box-modal-media"></div>
+        <div id="box-modal-files" class="box-modal-files"></div>
+        <div class="box-modal-actions">
+          <button id="modal-add-img-btn" class="box-btn">+ Image</button>
+          <button id="modal-add-vid-btn" class="box-btn">+ Video</button>
+          <button id="modal-add-file-btn" class="box-btn">+ File</button>
+          <button id="modal-delete-btn" class="box-btn delete">Delete Box</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('PWA ServiceWorker registered:', reg.scope))
+          .catch(err => console.warn('PWA ServiceWorker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>

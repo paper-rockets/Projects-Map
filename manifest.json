@@ -1,0 +1,25 @@
+{
+  "name": "Studio Mind Map",
+  "short_name": "Mind Map",
+  "description": "Ultra-minimal dark studio mind mapping PWA",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#141417",
+  "theme_color": "#141417",
+  "orientation": "any",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
