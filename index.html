@@ -336,7 +336,7 @@
     <input type="file" id="hidden-file-picker" style="display: none;">
   </div>
 
-  <script src="config.js"></script>
+  <script src="config.js" onerror="this.remove()"></script>
   <script src="app.js?v=35"></script>
   <script>
     if ('serviceWorker' in navigator) {
