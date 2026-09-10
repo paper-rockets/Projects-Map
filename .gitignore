@@ -1,5 +1,7 @@
 # Private configuration
 config.js
+weave/config.js
+**/config.js
 
 # OS & Editor files
 .DS_Store

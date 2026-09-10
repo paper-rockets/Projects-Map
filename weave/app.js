@@ -1524,7 +1524,7 @@ async function callAiApi(prompt) {
     const clientKey = (typeof window !== 'undefined' && window.LOCAL_GEMINI_KEY) || localStorage.getItem('gemini_api_key') || '';
     if (!clientKey) return null;
 
-    const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-3.8-flash'];
+    const candidateModels = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
     for (const model of candidateModels) {
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${clientKey}`, {
