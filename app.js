@@ -578,7 +578,10 @@ function renderCanvas() {
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
             Note
           </span>
-          <button type="button" class="box-note-delete-btn" title="Delete Note">&times;</button>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button type="button" class="box-note-expand-btn" title="Open in Expanded View">&#x2922;</button>
+            <button type="button" class="box-note-delete-btn" title="Delete Note">&times;</button>
+          </div>
         </div>
         <div class="box-note-body" contenteditable="true" data-placeholder="Type note details...">${escapeHtml(node.note)}</div>
       </div>
@@ -608,6 +611,10 @@ function renderCanvas() {
         <button type="button" class="strip-btn card-ai-btn" title="AI Expand this idea">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
           <span>AI</span>
+        </button>
+        <button type="button" class="strip-btn card-expand-btn" title="Open Expanded View">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+          <span>Expand</span>
         </button>
         <button type="button" class="strip-btn options-btn" title="Color & Actions">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg>
@@ -721,6 +728,27 @@ function renderCanvas() {
         aiExpandNode(node.id, cardAiBtn);
       });
       cardAiBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    }
+
+    // Quick Action: ⤢ Open Expanded View
+    const cardExpandBtn = card.querySelector('.card-expand-btn');
+    if (cardExpandBtn) {
+      cardExpandBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectNode(node.id);
+        openBoxModal(node);
+      });
+      cardExpandBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    }
+
+    const noteExpandBtn = card.querySelector('.box-note-expand-btn');
+    if (noteExpandBtn) {
+      noteExpandBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectNode(node.id);
+        openBoxModal(node);
+      });
+      noteExpandBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     }
 
     // Quick Action: ••• Options Context Menu
@@ -1902,6 +1930,9 @@ function setupContextMenu() {
     } else if (action === 'ai-expand') {
       hideNodeContextMenu();
       aiExpandNode(node.id);
+    } else if (action === 'open-expanded') {
+      hideNodeContextMenu();
+      openBoxModal(node);
     } else if (action === 'add-image') {
       hideNodeContextMenu();
       if (hiddenImagePicker) {
@@ -1983,10 +2014,26 @@ function setupContextMenu() {
 function openBoxModal(node) {
   if (!node) return;
   activeModalNodeId = node.id;
-  boxModalBody.innerText = node.body || '';
+  if (boxModalBody) boxModalBody.innerText = node.body || '';
   if (boxModalNote) boxModalNote.innerText = node.note || '';
+
+  const badge = document.getElementById('expanded-view-node-badge');
+  if (badge) {
+    badge.innerText = node.color ? 'Color Tagged' : 'Idea Details';
+    badge.style.color = node.color || 'var(--accent-cyan)';
+    badge.style.background = node.color ? `${node.color}22` : 'rgba(56, 189, 248, 0.12)';
+  }
+
   renderModalMedia(node);
-  boxModalOverlay.classList.remove('hidden');
+  if (boxModalOverlay) boxModalOverlay.classList.remove('hidden');
+
+  setTimeout(() => {
+    if (boxModalNote && node.body) {
+      boxModalNote.focus();
+    } else if (boxModalBody) {
+      boxModalBody.focus();
+    }
+  }, 60);
 }
 
 function renderModalMedia(node) {
@@ -2038,7 +2085,15 @@ function renderModalMedia(node) {
 }
 
 function closeBoxModal() {
-  boxModalOverlay.classList.add('hidden');
+  if (activeModalNodeId) {
+    const node = state.nodes.find(n => n.id === activeModalNodeId);
+    if (node) {
+      if (boxModalBody) node.body = boxModalBody.innerText;
+      if (boxModalNote) node.note = boxModalNote.innerText;
+      saveState();
+    }
+  }
+  if (boxModalOverlay) boxModalOverlay.classList.add('hidden');
   activeModalNodeId = null;
   renderCanvas();
 }
@@ -2509,8 +2564,36 @@ function setupEventListeners() {
     });
   }
 
-  // Box Modal Events
+  // Box Modal Events (Expanded View)
   if (closeModalBtn) closeModalBtn.addEventListener('click', closeBoxModal);
+  const modalDoneBtn = document.getElementById('modal-done-btn');
+  if (modalDoneBtn) modalDoneBtn.addEventListener('click', closeBoxModal);
+
+  if (boxModalBody) {
+    boxModalBody.addEventListener('input', () => {
+      if (!activeModalNodeId) return;
+      const node = state.nodes.find(n => n.id === activeModalNodeId);
+      if (node) {
+        node.body = boxModalBody.innerText;
+        requestAnimationFrame(renderConnections);
+        saveState();
+        updateCopilotContextBadge();
+      }
+    });
+  }
+
+  if (boxModalNote) {
+    boxModalNote.addEventListener('input', () => {
+      if (!activeModalNodeId) return;
+      const node = state.nodes.find(n => n.id === activeModalNodeId);
+      if (node) {
+        node.note = boxModalNote.innerText;
+        requestAnimationFrame(renderConnections);
+        saveState();
+      }
+    });
+  }
+
   if (boxModalOverlay) {
     boxModalOverlay.addEventListener('click', (e) => {
       if (e.target === boxModalOverlay) closeBoxModal();
@@ -2574,6 +2657,29 @@ function setupEventListeners() {
   // Sidebar events
   if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
   if (ideaSearch) ideaSearch.addEventListener('input', renderSidebar);
+
+  // PWA Install Prompt
+  let deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+  });
+
+  const moreInstallBtn = document.getElementById('more-install-btn');
+  if (moreInstallBtn) {
+    moreInstallBtn.addEventListener('click', async () => {
+      closeAllPopovers();
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+          deferredInstallPrompt = null;
+        }
+      } else {
+        alert('To install Classic Mind Map:\n• On iPhone / iPad: Tap the Share button (square with arrow) → tap "Add to Home Screen".\n• On Android / Chrome: Tap the three dots (⋮) → tap "Install app" or "Add to Home screen".\n• On Computer: Click the Install icon in your browser address bar.');
+      }
+    });
+  }
 }
 
 // ==========================================================================

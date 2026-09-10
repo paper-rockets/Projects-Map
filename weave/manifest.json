@@ -1,13 +1,15 @@
 {
-  "name": "Studio Mind Map",
-  "short_name": "Mind Map",
-  "description": "Ultra-minimal dark studio mind mapping PWA",
+  "id": "mind-map-weave",
+  "name": "Weave Mind Map",
+  "short_name": "Mind Weave",
+  "description": "Recursive AI idea orchestrator and node tree mind mapping workspace",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#141417",
-  "theme_color": "#141417",
+  "background_color": "#12101e",
+  "theme_color": "#12101e",
   "orientation": "any",
   "scope": "./",
+  "categories": ["productivity", "utilities"],
   "icons": [
     {
       "src": "icon-192.png",

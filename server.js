@@ -195,7 +195,13 @@ const server = http.createServer((req, res) => {
   }
 
   const safePath = path.normalize(reqPath).replace(/^(\.\.[\/\\])+/, '');
-  const filePath = path.join(BASE_DIR, safePath);
+  let filePath = path.join(BASE_DIR, safePath);
+
+  try {
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+      filePath = path.join(filePath, 'index.html');
+    }
+  } catch (e) {}
 
   fs.readFile(filePath, (err, data) => {
     if (err) {

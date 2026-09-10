@@ -334,21 +334,46 @@ html, body, #app {
   color: #ef4444;
 }
 
+.box-note-expand-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+
+.box-note-expand-btn:hover {
+  color: var(--text-main);
+}
+
 .box-note-body {
   background: transparent;
   border: none;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-muted);
   outline: none;
   cursor: text !important;
   word-break: break-word;
-  line-height: 1.35;
-  min-height: 18px;
-  max-height: 160px;
+  line-height: 1.45;
+  min-height: 24px;
+  max-height: 280px;
   overflow-y: auto;
   user-select: text !important;
   -webkit-user-select: text !important;
   touch-action: pan-y !important;
+  white-space: pre-wrap;
+}
+
+.text-box-card[style*="height"] .box-note-area {
+  flex: 1;
+}
+
+.text-box-card[style*="height"] .box-note-body {
+  max-height: none;
+  flex: 1;
 }
 
 .box-note-body:empty:before {
@@ -1308,15 +1333,26 @@ html, body, #app {
 
 .box-modal-card {
   width: 100%;
-  max-width: 380px;
+  max-width: 420px;
   background: var(--bg-box);
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+}
+
+.box-modal-card.expanded-view-card {
+  width: 92vw;
+  max-width: 620px;
+  max-height: 88vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  padding: 18px 22px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+  gap: 14px;
 }
 
 .box-modal-card.io-card {
@@ -1330,11 +1366,26 @@ html, body, #app {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border-card);
-  padding-bottom: 6px;
+  padding-bottom: 8px;
+}
+
+.expanded-view-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expanded-node-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent-cyan);
+  background: rgba(56, 189, 248, 0.12);
+  padding: 2px 7px;
+  border-radius: 4px;
 }
 
 .box-modal-title {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -1351,18 +1402,80 @@ html, body, #app {
   line-height: 1;
 }
 
+.box-modal-close:hover {
+  color: var(--text-main);
+}
+
+.expanded-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.expanded-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+.expanded-notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.expanded-notes-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 .box-modal-body {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--border-card);
   border-radius: 6px;
-  padding: 8px 10px;
-  font-size: 13px;
+  padding: 8px 12px;
+  font-size: 13.5px;
   color: var(--text-main);
-  min-height: 38px;
-  max-height: 140px;
-  overflow-y: auto;
   outline: none;
   line-height: 1.4;
+  user-select: text !important;
+  cursor: text !important;
+}
+
+.box-modal-body:empty:before {
+  content: attr(data-placeholder);
+  color: var(--text-dim);
+  pointer-events: none;
+  display: block;
+}
+
+.expanded-topic-body {
+  font-size: 14.5px;
+  font-weight: 600;
+  min-height: 38px;
+  max-height: 90px;
+  overflow-y: auto;
+}
+
+.expanded-note-body {
+  font-size: 13.5px;
+  line-height: 1.6;
+  min-height: 180px;
+  max-height: 380px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: rgba(0, 0, 0, 0.26);
+  border-color: rgba(255, 255, 255, 0.1);
+  padding: 12px 14px;
+}
+
+.expanded-note-body:focus,
+.expanded-topic-body:focus {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .box-modal-media, .box-modal-files {
@@ -1374,9 +1487,23 @@ html, body, #app {
 .box-modal-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  padding-top: 6px;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--border-card);
+}
+
+@media (max-width: 600px) {
+  .box-modal-card.expanded-view-card {
+    width: 96vw;
+    padding: 14px;
+    max-height: 92vh;
+    gap: 10px;
+  }
+  .expanded-note-body {
+    min-height: 140px;
+    max-height: 300px;
+  }
 }
 
 /* I/O Tabs */

@@ -1,13 +1,15 @@
 {
-  "name": "Studio Mind Map",
-  "short_name": "Mind Map",
-  "description": "Ultra-minimal dark studio mind mapping PWA",
+  "id": "mind-map-classic",
+  "name": "Classic Mind Map",
+  "short_name": "Mind Classic",
+  "description": "Ultra-minimal studio mind mapping and brainstorming workspace",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#141417",
   "theme_color": "#141417",
   "orientation": "any",
   "scope": "./",
+  "categories": ["productivity", "utilities"],
   "icons": [
     {
       "src": "icon-192.png",

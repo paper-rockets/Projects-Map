@@ -3116,6 +3116,30 @@ function setupEventListeners() {
   // Sidebar events
   if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
   if (ideaSearch) ideaSearch.addEventListener('input', renderSidebar);
+
+  // PWA Install Prompt for Weave
+  let deferredWeaveInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredWeaveInstallPrompt = e;
+  });
+
+  const moreInstallBtn = document.getElementById('more-install-btn');
+  if (moreInstallBtn) {
+    moreInstallBtn.addEventListener('click', async () => {
+      const moreMenu = document.getElementById('more-menu');
+      if (moreMenu) moreMenu.classList.add('hidden');
+      if (deferredWeaveInstallPrompt) {
+        deferredWeaveInstallPrompt.prompt();
+        const { outcome } = await deferredWeaveInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+          deferredWeaveInstallPrompt = null;
+        }
+      } else {
+        alert('To install Weave Mind Map:\n• On iPhone / iPad: Tap the Share button (square with arrow) → tap "Add to Home Screen".\n• On Android / Chrome: Tap the three dots (⋮) → tap "Install app" or "Add to Home screen".\n• On Computer: Click the Install icon in your browser address bar.');
+      }
+    });
+  }
 }
 
 // ==========================================================================
