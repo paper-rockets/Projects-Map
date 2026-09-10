@@ -41,7 +41,7 @@ function getServerGeminiKey() {
 }
 
 async function callGeminiServer(prompt, apiKey) {
-  const candidateModels = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash'];
+  const candidateModels = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
   for (const model of candidateModels) {
     try {
       const result = await new Promise((resolve) => {
@@ -78,11 +78,82 @@ async function callGeminiServer(prompt, apiKey) {
       console.warn(`Model ${model} error:`, e);
     }
   }
+}
+
+function downloadImageAsDataUrl(url, maxRedirects = 5) {
+  return new Promise((resolve, reject) => {
+    if (maxRedirects <= 0) return reject(new Error('Too many redirects'));
+    try {
+      const req = https.get(url, { timeout: 30000 }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          return resolve(downloadImageAsDataUrl(res.headers.location, maxRedirects - 1));
+        }
+        if (res.statusCode !== 200) {
+          return reject(new Error(`Image fetch failed with status ${res.statusCode}`));
+        }
+        const chunks = [];
+        res.on('data', chunk => chunks.push(chunk));
+        res.on('end', () => {
+          const buffer = Buffer.concat(chunks);
+          const mime = res.headers['content-type'] || 'image/jpeg';
+          resolve(`data:${mime};base64,${buffer.toString('base64')}`);
+        });
+        res.on('error', err => reject(err));
+      });
+      req.on('error', err => reject(err));
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Image fetch timed out'));
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+async function generateImageServer(prompt) {
+  try {
+    const cleanPrompt = encodeURIComponent(prompt.trim());
+    const serviceUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=768&height=768&nologo=true`;
+    const dataUrl = await downloadImageAsDataUrl(serviceUrl);
+    if (dataUrl) return dataUrl;
+  } catch (e) {
+    console.warn('Image generation error:', e.message);
+  }
   return null;
 }
 
 const server = http.createServer((req, res) => {
   let reqPath = req.url.split('?')[0];
+
+  // Image Generation API
+  if (req.method === 'POST' && reqPath === '/api/image') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const parsed = JSON.parse(body || '{}');
+        const prompt = (parsed.prompt || '').trim();
+        if (!prompt) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Prompt is required.' }));
+          return;
+        }
+        const dataUrl = await generateImageServer(prompt);
+        if (dataUrl) {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ imageUrl: dataUrl, prompt }));
+        } else {
+          res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Unable to generate image at this time.' }));
+        }
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'Server error processing image request.' }));
+      }
+    });
+    return;
+  }
 
   // Secure Server-Side Gemini API Proxy
   if (req.method === 'POST' && reqPath === '/api/ai') {
@@ -148,3 +219,12 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, HOST, () => {
   console.log(`Server listening on http://${HOST}:${PORT}`);
 });
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection:', reason);
+});
+

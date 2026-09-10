@@ -89,6 +89,7 @@ const aiQuickChips = document.getElementById('ai-quick-chips');
 const aiChatLog = document.getElementById('ai-chat-log');
 const aiInput = document.getElementById('ai-input');
 const aiSendBtn = document.getElementById('ai-send-btn');
+const aiImageBtn = document.getElementById('ai-image-btn');
 const aiMindmapBtn = document.getElementById('ai-mindmap-btn');
 const aiFullmapBtn = document.getElementById('ai-fullmap-btn');
 
@@ -604,6 +605,10 @@ function renderCanvas() {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           <span>Branch</span>
         </button>
+        <button type="button" class="strip-btn card-ai-btn" title="AI Expand this idea">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+          <span>AI</span>
+        </button>
         <button type="button" class="strip-btn options-btn" title="Color & Actions">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg>
         </button>
@@ -615,6 +620,17 @@ function renderCanvas() {
 
     bodyEl.addEventListener('focus', () => {
       selectNode(node.id);
+    });
+
+    bodyEl.addEventListener('pointerdown', (e) => {
+      // Allow 100% native cursor placement & text selection without dragging card
+      e.stopPropagation();
+      selectNode(node.id);
+    });
+
+    bodyEl.addEventListener('dblclick', (e) => {
+      // Allow native double-click word selection without opening modals
+      e.stopPropagation();
     });
 
     bodyEl.addEventListener('input', () => {
@@ -642,6 +658,13 @@ function renderCanvas() {
     const noteBodyEl = card.querySelector('.box-note-body');
     if (noteBodyEl) {
       noteBodyEl.addEventListener('focus', () => selectNode(node.id));
+      noteBodyEl.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        selectNode(node.id);
+      });
+      noteBodyEl.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+      });
       noteBodyEl.addEventListener('input', () => {
         node.note = noteBodyEl.innerText;
         requestAnimationFrame(renderConnections);
@@ -684,6 +707,22 @@ function renderCanvas() {
       });
     }
 
+    // Quick Action: ✦ In-Box AI Expand
+    const cardAiBtn = card.querySelector('.card-ai-btn');
+    if (cardAiBtn) {
+      cardAiBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectNode(node.id);
+        const text = (node.body || node.title || '').trim();
+        if (!text) {
+          focusNodeText(node.id);
+          return;
+        }
+        aiExpandNode(node.id, cardAiBtn);
+      });
+      cardAiBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    }
+
     // Quick Action: ••• Options Context Menu
     const optBtn = card.querySelector('.options-btn');
     if (optBtn) {
@@ -701,12 +740,6 @@ function renderCanvas() {
       e.stopPropagation();
       selectNode(node.id);
       openNodeContextMenu(node, e.clientX, e.clientY);
-    });
-
-    // Double click card opens box details modal
-    card.addEventListener('dblclick', (e) => {
-      e.stopPropagation();
-      openBoxModal(node);
     });
 
     // Resize Handle
@@ -737,9 +770,25 @@ function renderCanvas() {
       });
     });
 
-    // Pointer Drag on Card
+    // Pointer Drag on Card (Dedicated Drag Bar or empty card margins only)
     card.addEventListener('pointerdown', (e) => {
       if (e.target.closest('button') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.port-dot') || e.target.closest('.resize-handle') || e.target.closest('.collapse-toggle-btn') || e.target.classList.contains('node-checkbox')) return;
+
+      const isEditable = e.target.isContentEditable ||
+                         e.target.classList.contains('box-body') ||
+                         e.target.classList.contains('box-note-body') ||
+                         e.target.closest('.box-body') ||
+                         e.target.closest('.box-note-body') ||
+                         e.target.tagName === 'INPUT' ||
+                         e.target.tagName === 'TEXTAREA';
+
+      if (isEditable) {
+        selectNode(node.id);
+        closeAllPopovers();
+        potentialDrag = null;
+        return; // Text interaction only — NEVER initiate card drag here
+      }
+
       e.stopPropagation();
 
       selectNode(node.id);
@@ -753,7 +802,6 @@ function renderCanvas() {
       const grabY = pointerCanvasY - node.y;
 
       const isDragBar = !!e.target.closest('.card-drag-bar');
-      const isEditable = e.target.isContentEditable || e.target.classList.contains('box-body') || e.target.classList.contains('box-note-body');
 
       if (isDragBar) {
         draggingCardNode = node;
@@ -771,7 +819,7 @@ function renderCanvas() {
           grabOffsetY: grabY,
           pointerId: e.pointerId,
           targetEl: e.target,
-          isEditable: isEditable
+          isEditable: false
         };
       }
     });
@@ -873,8 +921,14 @@ function renderConnections() {
 function setupGlobalPointerMovement() {
   window.addEventListener('pointermove', (e) => {
     if (potentialDrag) {
+      const sel = window.getSelection ? window.getSelection().toString() : '';
+      if (sel && sel.length > 0) {
+        potentialDrag = null;
+        return;
+      }
+
       const dist = Math.hypot(e.clientX - potentialDrag.startX, e.clientY - potentialDrag.startY);
-      if (dist > 4) {
+      if (dist > 6) {
         draggingCardNode = potentialDrag.node;
         grabOffsetX = potentialDrag.grabOffsetX;
         grabOffsetY = potentialDrag.grabOffsetY;
@@ -1411,7 +1465,7 @@ async function callGeminiApi(prompt) {
   const clientKey = (typeof window !== 'undefined' && window.LOCAL_GEMINI_KEY) || localStorage.getItem('gemini_api_key') || '';
   if (!clientKey) return null;
 
-  const candidateModels = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash'];
+  const candidateModels = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
   for (const model of candidateModels) {
     try {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${clientKey}`, {
@@ -1428,8 +1482,14 @@ async function callGeminiApi(prompt) {
 }
 
 async function handleCopilotSubmit(customPrompt = null, spawnAll = false) {
-  const query = customPrompt || aiInput.value.trim();
+  const query = (customPrompt || aiInput.value).trim();
   if (!query) return;
+
+  const isImageIntent = query.match(/^(\/image|image:|draw\s|generate\s+image)/i);
+  if (isImageIntent) {
+    const promptText = query.replace(/^(\/image|image:|draw\s+|generate\s+image\s*(of|for)?)/i, '').trim() || query;
+    return handleGenerateImage(promptText);
+  }
 
   addAiChatMessage('user', query);
   if (!customPrompt) aiInput.value = '';
@@ -1467,6 +1527,108 @@ Guidelines:
     if (thinkingMsg && thinkingMsg.innerText.includes('Analyzing map context...')) thinkingMsg.remove();
     addAiChatMessage('bot', 'Connection error: Unable to reach Gemini API.');
   }
+}
+
+async function handleGenerateImage(customPrompt = null) {
+  const query = (customPrompt || aiInput.value).trim();
+  if (!query) {
+    addAiChatMessage('bot', 'Please enter a description for the image you want to create.');
+    return;
+  }
+
+  addAiChatMessage('user', `Generate image: "${query}"`);
+  if (!customPrompt) aiInput.value = '';
+
+  addAiChatMessage('bot', `Creating image for "${query}"...`);
+  const thinkingMsg = aiChatLog.querySelector('.ai-msg.bot:last-child');
+
+  try {
+    let imageUrl = null;
+
+    // 1. Try server endpoint first (self-contained base64 data)
+    try {
+      const res = await fetch('/api/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: query })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.imageUrl) imageUrl = data.imageUrl;
+      }
+    } catch (e) {
+      console.warn('Server image proxy failed, falling back to direct...');
+    }
+
+    // 2. Direct fallback
+    if (!imageUrl) {
+      imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(query)}?width=768&height=768&nologo=true`;
+    }
+
+    if (thinkingMsg && thinkingMsg.parentNode) thinkingMsg.remove();
+    renderAiImageCard(imageUrl, query);
+  } catch (err) {
+    if (thinkingMsg && thinkingMsg.parentNode) thinkingMsg.remove();
+    addAiChatMessage('bot', 'Unable to generate image. Please verify your connection and try again.');
+  }
+}
+
+function renderAiImageCard(imageUrl, prompt) {
+  if (!aiChatLog) return;
+  const msg = document.createElement('div');
+  msg.className = 'ai-msg bot';
+
+  const card = document.createElement('div');
+  card.className = 'ai-image-card';
+
+  const preview = document.createElement('img');
+  preview.className = 'ai-image-preview';
+  preview.src = imageUrl;
+  preview.alt = prompt;
+
+  const meta = document.createElement('div');
+  meta.className = 'ai-image-meta';
+  meta.innerText = `"${prompt}"`;
+
+  const actions = document.createElement('div');
+  actions.className = 'ai-image-actions';
+
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'ai-image-add-btn';
+  addBtn.innerText = '＋ Add to Map';
+  addBtn.addEventListener('click', () => {
+    const targetNode = state.nodes.find(n => n.id === state.selectedNodeId);
+    const mediaObj = { type: 'image', url: imageUrl, name: prompt.slice(0, 24) || 'AI Image' };
+    if (targetNode) {
+      attachMediaToNode(targetNode, mediaObj);
+    } else {
+      const centerX = (-state.panX + window.innerWidth / 2) / state.scale - 90;
+      const centerY = (-state.panY + window.innerHeight / 2) / state.scale - 25;
+      const newNode = spawnNode('', prompt.slice(0, 30), [mediaObj], [], centerX, centerY);
+      if (newNode) selectNode(newNode.id);
+    }
+    addBtn.innerText = '✓ Added to Map';
+    addBtn.disabled = true;
+  });
+
+  const downloadLink = document.createElement('a');
+  downloadLink.className = 'ai-image-download-btn';
+  downloadLink.href = imageUrl;
+  downloadLink.download = `${prompt.replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 24) || 'image'}.jpg`;
+  downloadLink.target = '_blank';
+  downloadLink.innerText = 'Download';
+
+  actions.appendChild(addBtn);
+  actions.appendChild(downloadLink);
+
+  card.appendChild(preview);
+  card.appendChild(meta);
+  card.appendChild(actions);
+  msg.appendChild(card);
+
+  aiChatLog.appendChild(msg);
+  aiChatLog.scrollTop = aiChatLog.scrollHeight;
 }
 
 function parseAiBullets(text) {
@@ -1521,17 +1683,21 @@ function renderAiResponseWithPills(replyText) {
 }
 
 // AI Nodes to Map with Preview & Undo Banner
-function applyAiSuggestionsToMap(suggestions) {
+function applyAiSuggestionsToMap(suggestions, specificTargetNode = null) {
   if (!suggestions || suggestions.length === 0) return;
 
-  const targetNode = state.nodes.find(n => n.id === state.selectedNodeId) || state.nodes[0];
+  const targetNode = specificTargetNode || state.nodes.find(n => n.id === state.selectedNodeId) || state.nodes[0];
   const rootX = targetNode ? targetNode.x + (targetNode.width || 180) + 60 : (-state.panX + window.innerWidth / 2) / state.scale - 90;
   const rootY = targetNode ? targetNode.y : (-state.panY + window.innerHeight / 2) / state.scale - 25;
 
   const addedIds = [];
+  const spacing = 58;
+  const totalH = (suggestions.length - 1) * spacing;
+  const startY = rootY - (totalH / 2) + 12;
 
   suggestions.forEach((itemText, idx) => {
-    const newNode = spawnNode('', itemText, [], [], rootX, rootY + (idx * 56), targetNode ? targetNode.id : null, targetNode?.color);
+    const spawnY = startY + (idx * spacing);
+    const newNode = spawnNode('', itemText, [], [], rootX, spawnY, targetNode ? targetNode.id : null, targetNode?.color);
     if (newNode) {
       addedIds.push(newNode.id);
     }
@@ -1547,6 +1713,10 @@ function applyAiSuggestionsToMap(suggestions) {
 
   if (aiPreviewBanner) {
     aiPreviewBanner.classList.remove('hidden');
+    const label = aiPreviewBanner.querySelector('.ai-preview-text');
+    if (label && targetNode) {
+      label.innerText = `AI proposed ${addedIds.length} branches for "${(targetNode.body || 'idea').slice(0, 24)}"`;
+    }
   }
 
   renderCanvas();
@@ -1599,27 +1769,31 @@ function addAiChatMessage(role, text) {
   aiChatLog.scrollTop = aiChatLog.scrollHeight;
 }
 
-// AI Expand from Context Menu
+// AI Expand from Context Menu or In-Box AI Button
 async function aiExpandNode(nodeId, triggerBtn = null) {
   const node = state.nodes.find(n => n.id === nodeId);
   if (!node) return;
 
-  const originalBtnText = triggerBtn ? triggerBtn.innerText : '';
+  const originalHtml = triggerBtn ? triggerBtn.innerHTML : '';
   if (triggerBtn) {
-    triggerBtn.innerText = 'Expanding...';
+    triggerBtn.innerHTML = `
+      <svg class="spin-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      <span>Thinking...</span>
+    `;
     triggerBtn.disabled = true;
   }
 
-  const prompt = `Topic: "${node.body || node.title}". Generate 3 to 4 concise, high-impact sub-topics or next steps that branch off this idea. Rules: Return only a plain bulleted list (- item). 3 to 6 words per bullet.`;
+  const topicText = (node.body || node.title || '').trim();
+  const prompt = `Topic: "${topicText}". Generate 3 to 4 concise, high-impact sub-topics or next steps that branch off this idea. Rules: Return only a plain bulleted list (- item). 3 to 6 words per bullet.`;
   const reply = await callGeminiApi(prompt);
 
   if (reply) {
     const bullets = parseAiBullets(reply);
-    applyAiSuggestionsToMap(bullets);
+    applyAiSuggestionsToMap(bullets, node);
   }
 
   if (triggerBtn) {
-    triggerBtn.innerText = originalBtnText || 'AI Expand';
+    triggerBtn.innerHTML = originalHtml || '<span>AI</span>';
     triggerBtn.disabled = false;
   }
 }
@@ -1725,6 +1899,9 @@ function setupContextMenu() {
       hideNodeContextMenu();
       const child = createChildNode(node);
       if (child) focusNodeText(child.id);
+    } else if (action === 'ai-expand') {
+      hideNodeContextMenu();
+      aiExpandNode(node.id);
     } else if (action === 'add-image') {
       hideNodeContextMenu();
       if (hiddenImagePicker) {
@@ -2274,6 +2451,7 @@ function setupEventListeners() {
 
   // Copilot Input & Buttons
   if (aiSendBtn) aiSendBtn.addEventListener('click', () => handleCopilotSubmit());
+  if (aiImageBtn) aiImageBtn.addEventListener('click', () => handleGenerateImage());
   if (aiMindmapBtn) aiMindmapBtn.addEventListener('click', () => handleCopilotSubmit(null, true));
   if (aiFullmapBtn) aiFullmapBtn.addEventListener('click', () => handleGenerateFullMap());
   if (closeAiBtn) closeAiBtn.addEventListener('click', closeAiPanel);
@@ -2292,6 +2470,13 @@ function setupEventListeners() {
     aiQuickChips.addEventListener('click', (e) => {
       const chip = e.target.closest('.ai-chip');
       if (!chip) return;
+      if (chip.dataset.action === 'image') {
+        const targetNode = state.nodes.find(n => n.id === state.selectedNodeId);
+        const topic = targetNode ? (targetNode.body || targetNode.title) : 'project goals and creative vision';
+        const imagePrompt = `visual illustration of: ${topic}`;
+        handleGenerateImage(imagePrompt);
+        return;
+      }
       const prompt = chip.dataset.prompt;
       if (prompt) handleCopilotSubmit(prompt);
     });
