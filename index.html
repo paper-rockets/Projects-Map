@@ -10,84 +10,173 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=26">
+  <link rel="stylesheet" href="styles.css?v=30">
 </head>
 <body>
   <div id="app">
-    <!-- Floating Vertical Left Toolbar Capsule (Matching Reference Images) -->
-    <nav class="floating-toolbar-left">
-      <button id="toggle-sidebar-btn" class="tool-btn" title="Ideas List">
-        <span>Ideas</span>
+    <!-- Top AI Change Preview Banner (Floating quiet bar) -->
+    <div id="ai-preview-banner" class="ai-preview-banner hidden">
+      <span>✦ Previewing AI additions</span>
+      <div class="ai-preview-actions">
+        <button type="button" id="ai-accept-btn" class="preview-btn accept">Keep</button>
+        <button type="button" id="ai-undo-btn" class="preview-btn undo">Undo</button>
+      </div>
+    </div>
+
+    <!-- Minimal Floating Dock: [+] [Search] [✦ AI] [•••] -->
+    <nav id="floating-dock" class="floating-dock" aria-label="Main Navigation">
+      <button type="button" id="dock-add-btn" class="dock-btn" aria-label="Add Idea or Branch" title="Add Idea / Branch">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span class="dock-btn-label">Add</span>
       </button>
-      <div class="tool-divider"></div>
-      <button id="add-root-node-btn" class="tool-btn" title="Add Text Box">
-        <span>+ Box</span>
+      <button type="button" id="dock-search-btn" class="dock-btn" aria-label="Search & Commands" title="Search or ⌘K">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="dock-btn-label">Search</span>
       </button>
-      <button id="add-media-node-btn" class="tool-btn" title="Add Media">
-        <span>+ Media</span>
+      <button type="button" id="dock-ai-btn" class="dock-btn" aria-label="AI Project Copilot" title="AI Copilot">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/><path d="M19 3v4"/><path d="M21 5h-4"/></svg>
+        <span class="dock-btn-label">AI</span>
       </button>
-      <button id="auto-layout-btn" class="tool-btn" title="Auto Layout">
-        <span>Auto</span>
-      </button>
-      <button id="toggle-io-btn" class="tool-btn" title="Import / Export Markdown">
-        <span>I/O</span>
-      </button>
-      <div class="tool-divider"></div>
-      <button id="toggle-ai-btn" class="tool-btn" title="Gemini AI Assistant">
-        <span>AI</span>
-      </button>
-      <button id="theme-toggle-btn" class="tool-btn" title="Toggle Theme">
-        <span id="theme-btn-text">Dark</span>
+      <button type="button" id="dock-more-btn" class="dock-btn" aria-label="More Actions & Settings" title="More Actions">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg>
+        <span class="dock-btn-label">More</span>
       </button>
     </nav>
 
-    <!-- Floating Bottom Center Control Pill (Matching Reference Images) -->
-    <div class="floating-pill-bottom">
-      <button id="zoom-out-btn" class="pill-btn">-</button>
-      <span id="zoom-level" class="pill-text">100%</span>
-      <button id="zoom-in-btn" class="pill-btn">+</button>
-      <button id="zoom-reset-btn" class="pill-btn">Reset</button>
+    <!-- Floating Zoom Pill -->
+    <div id="floating-zoom-pill" class="floating-zoom-pill">
+      <button type="button" id="zoom-out-btn" class="zoom-pill-action" aria-label="Zoom Out" title="Zoom Out">−</button>
+      <button type="button" id="zoom-level-btn" class="zoom-pill-label" aria-label="Zoom Options" title="Zoom Options">
+        <span id="zoom-level">100%</span>
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <button type="button" id="zoom-in-btn" class="zoom-pill-action" aria-label="Zoom In" title="Zoom In">+</button>
+
+      <div id="zoom-menu" class="popover-menu hidden">
+        <button type="button" class="popover-item" id="zoom-fit-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          <span>Fit Map to Screen</span>
+        </button>
+        <button type="button" class="popover-item" id="zoom-reset-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Reset to 100%</span>
+        </button>
+        <button type="button" class="popover-item" id="zoom-center-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>Center Selection</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Mobile Drawer Overlay -->
+    <!-- Quick Creation Sheet / Popover -->
+    <div id="create-menu" class="popover-menu creation-menu hidden">
+      <button type="button" class="popover-item" id="create-idea-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <div class="popover-text-col">
+          <div class="popover-item-title">New Idea</div>
+          <div class="popover-item-desc">Create standalone idea box</div>
+        </div>
+      </button>
+      <button type="button" class="popover-item" id="create-branch-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+        <div class="popover-text-col">
+          <div class="popover-item-title">New Branch</div>
+          <div class="popover-item-desc">Branch off selected node (Tab)</div>
+        </div>
+      </button>
+      <button type="button" class="popover-item" id="create-media-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        <div class="popover-text-col">
+          <div class="popover-item-title">Attach Media</div>
+          <div class="popover-item-desc">Drop image or video</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- More Sheet / Popover -->
+    <div id="more-menu" class="popover-menu more-menu hidden">
+      <button type="button" class="popover-item" id="more-auto-layout-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Auto Arrange Map</span>
+      </button>
+      <button type="button" class="popover-item" id="more-fit-map-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        <span>Fit Map to Screen</span>
+      </button>
+      <button type="button" class="popover-item" id="more-ideas-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span>Ideas Index List</span>
+      </button>
+      <button type="button" class="popover-item" id="more-io-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Import / Export (Markdown & PNG)</span>
+      </button>
+      <button type="button" class="popover-item" id="more-theme-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+        <span>Theme: <strong id="theme-btn-text">Dark</strong></span>
+      </button>
+    </div>
+
+    <!-- Command Palette Modal (Ctrl/Cmd+K) -->
+    <div id="command-palette-modal" class="box-modal-overlay hidden">
+      <div class="command-palette-card">
+        <div class="cmd-input-row">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="cmd-palette-input" placeholder="Search ideas or run action... (Esc to exit)" autocomplete="off">
+          <span class="cmd-shortcut-hint">Esc</span>
+        </div>
+        <div id="cmd-palette-results" class="cmd-palette-results">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Universal Backdrop Overlay -->
     <div id="drawer-overlay" class="drawer-overlay hidden"></div>
 
-    <!-- Collapsible Left Sidebar (Ideas List) -->
+    <!-- Ideas Drawer (Searchable Node Index) -->
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-header">
         <h2>Ideas & Items</h2>
-        <button id="close-sidebar-btn" class="icon-btn">&times;</button>
+        <button type="button" id="close-sidebar-btn" class="icon-btn">&times;</button>
       </div>
       <div class="sidebar-actions">
         <input type="text" id="idea-search" placeholder="Search ideas..." />
       </div>
       <div class="sidebar-hint">
-        <span>Click any item to drop onto canvas</span>
+        <span>Click any item to focus node</span>
       </div>
       <div id="ideas-list" class="ideas-list">
         <!-- Idea items -->
       </div>
     </aside>
 
-    <!-- Collapsible Gemini AI Chat Panel -->
+    <!-- AI Project Copilot Panel -->
     <aside id="ai-chat-panel" class="ai-chat-panel hidden">
       <div class="ai-panel-header">
-        <h2>Gemini 3.8 Flash</h2>
-        <button id="close-ai-btn" class="icon-btn">&times;</button>
+        <div class="ai-header-info">
+          <h2>✦ Project Copilot</h2>
+          <div id="ai-context-indicator" class="ai-context-indicator">Whole Map</div>
+        </div>
+        <button type="button" id="close-ai-btn" class="icon-btn">&times;</button>
       </div>
-      <!-- Built-in Key Active: Hidden from UI -->
-      <div class="ai-key-section" style="display: none;">
-        <input type="password" id="gemini-api-key-input" autocomplete="off" />
+      <!-- Context-Aware Prompt Suggestions -->
+      <div id="ai-quick-chips" class="ai-quick-chips">
+        <button type="button" class="ai-chip" data-prompt="What important elements or steps am I missing here?">✦ What am I missing?</button>
+        <button type="button" class="ai-chip" data-prompt="Break this down into 3-4 concrete, actionable sub-tasks.">✦ Break into steps</button>
+        <button type="button" class="ai-chip" data-prompt="Brainstorm 4 high-impact next ideas for this project.">✦ Brainstorm ideas</button>
+        <button type="button" class="ai-chip" data-prompt="How can I simplify this into a clean 1-weekend MVP?">✦ Simplify MVP</button>
+        <button type="button" class="ai-chip" data-prompt="Organize and structure this branch logically.">✦ Organize branch</button>
       </div>
       <div id="ai-chat-log" class="ai-chat-log">
-        <div class="ai-msg bot">Hi! I am your Gemini 3.8 Flash AI Assistant. Ask me anything, click "+ To Map", or click "Full Tree" to generate an organized mind map!</div>
+        <div class="ai-msg bot">I am your Project Copilot. I understand your map structure and can break down topics, suggest missing pieces, and add ideas directly to your canvas.</div>
       </div>
       <div class="ai-chat-input-area">
-        <textarea id="ai-input" placeholder="Ask Gemini or type 'Generate ideas for...'"></textarea>
+        <textarea id="ai-input" placeholder="Ask about this project or pick a chip above..."></textarea>
         <div class="ai-input-actions">
-          <button id="ai-send-btn" class="box-btn">Send</button>
-          <button id="ai-mindmap-btn" class="box-btn">+ To Map</button>
-          <button id="ai-fullmap-btn" class="box-btn" title="Generate multi-level topic tree">Full Tree</button>
+          <button type="button" id="ai-send-btn" class="box-btn primary-box-btn">Ask</button>
+          <button type="button" id="ai-mindmap-btn" class="box-btn">+ To Map</button>
+          <button type="button" id="ai-fullmap-btn" class="box-btn" title="Generate multi-level topic tree">Full Tree</button>
         </div>
       </div>
     </aside>
@@ -212,11 +301,11 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="app.js?v=26"></script>
+  <script src="app.js?v=30"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=26')
+        navigator.serviceWorker.register('./sw.js?v=30')
           .then(reg => {
             reg.update();
             console.log('PWA ServiceWorker registered & updated:', reg.scope);
