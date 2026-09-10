@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=24">
+  <link rel="stylesheet" href="styles.css?v=25">
 </head>
 <body>
   <div id="app">
@@ -109,7 +109,11 @@
           <span class="box-modal-title">Box Details</span>
           <button id="close-modal-btn" class="box-modal-close">&times;</button>
         </div>
-        <div id="box-modal-body" class="box-modal-body" contenteditable="true" data-placeholder="Type text here..."></div>
+        <div id="box-modal-body" class="box-modal-body" contenteditable="true" data-placeholder="Type main topic here..."></div>
+        <div class="box-modal-note-section">
+          <div style="font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px;">Note Details</div>
+          <div id="box-modal-note" class="box-modal-body" contenteditable="true" data-placeholder="Type note details here..." style="min-height: 60px; max-height: 120px;"></div>
+        </div>
         <div id="box-modal-media" class="box-modal-media"></div>
         <div id="box-modal-files" class="box-modal-files"></div>
         <div class="box-modal-actions">
@@ -208,11 +212,11 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="app.js?v=24"></script>
+  <script src="app.js?v=25"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=24')
+        navigator.serviceWorker.register('./sw.js?v=25')
           .then(reg => {
             reg.update();
             console.log('PWA ServiceWorker registered & updated:', reg.scope);

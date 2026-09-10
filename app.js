@@ -17,6 +17,7 @@ const defaultState = {
       id: 'box-1',
       title: '',
       body: 'Central Topic',
+      note: '',
       media: [],
       files: [],
       color: '#e67e22',
@@ -82,6 +83,7 @@ let panStartY = 0;
 let draggingCardNode = null;
 let grabOffsetX = 0;
 let grabOffsetY = 0;
+let potentialDrag = null;
 
 let isResizingCardNode = null;
 let resizeStartWidth = 0;
@@ -160,6 +162,7 @@ function loadFromLocalStorage() {
     const parsed = JSON.parse(raw);
     const loadedNodes = (parsed.nodes || defaultState.nodes).map(n => ({
       ...n,
+      note: typeof n.note === 'string' ? n.note : '',
       color: n.color || null,
       hasCheckbox: !!n.hasCheckbox,
       isCompleted: !!n.isCompleted,
@@ -190,6 +193,7 @@ let activeModalNodeId = null;
 const boxModalOverlay = document.getElementById('box-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const boxModalBody = document.getElementById('box-modal-body');
+const boxModalNote = document.getElementById('box-modal-note');
 const boxModalMedia = document.getElementById('box-modal-media');
 const boxModalFiles = document.getElementById('box-modal-files');
 const modalAddImgBtn = document.getElementById('modal-add-img-btn');
@@ -318,18 +322,42 @@ function deleteNodeById(nodeId) {
 }
 
 function focusNodeText(nodeId) {
+  selectNode(nodeId);
   requestAnimationFrame(() => {
     const card = nodesLayer.querySelector(`[data-node-id="${nodeId}"]`);
     if (card) {
       const bodyEl = card.querySelector('.box-body');
       if (bodyEl) {
         bodyEl.focus();
-        const range = document.createRange();
-        range.selectNodeContents(bodyEl);
-        range.collapse(false);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
+        try {
+          const range = document.createRange();
+          range.selectNodeContents(bodyEl);
+          range.collapse(false);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } catch (e) {}
+      }
+    }
+  });
+}
+
+function focusNodeNote(nodeId) {
+  selectNode(nodeId);
+  requestAnimationFrame(() => {
+    const card = nodesLayer.querySelector(`[data-node-id="${nodeId}"]`);
+    if (card) {
+      const noteEl = card.querySelector('.box-note-body');
+      if (noteEl) {
+        noteEl.focus();
+        try {
+          const range = document.createRange();
+          range.selectNodeContents(noteEl);
+          range.collapse(false);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } catch (e) {}
       }
     }
   });
@@ -350,6 +378,11 @@ function openNodeContextMenu(node, clientX, clientY) {
   nodeContextMenu.querySelectorAll('.color-swatch-dot').forEach(dot => {
     dot.classList.toggle('active-swatch', dot.dataset.color === node.color);
   });
+
+  const addNoteSpan = nodeContextMenu.querySelector('[data-action="add-note"] span');
+  if (addNoteSpan) {
+    addNoteSpan.innerText = (node.note && node.note.trim()) ? 'Delete Note' : 'Add Notes';
+  }
 
   nodeContextMenu.classList.remove('context-menu-hidden');
 
@@ -429,13 +462,15 @@ function setupContextMenu() {
       }
     } else if (action === 'add-note') {
       hideNodeContextMenu();
-      const child = createChildNode(node);
-      if (child) {
-        child.body = 'Note: ';
-        if (node.color) child.color = node.color;
-        renderCanvas();
+      if (node.note && node.note.trim()) {
+        node.note = '';
         saveState();
-        focusNodeText(child.id);
+        renderCanvas();
+      } else {
+        node.note = 'Note details...';
+        saveState();
+        renderCanvas();
+        focusNodeNote(node.id);
       }
     } else if (action === 'toggle-checkbox') {
       hideNodeContextMenu();
@@ -503,6 +538,7 @@ function openBoxModal(node) {
   if (!node) return;
   activeModalNodeId = node.id;
   boxModalBody.innerText = node.body || '';
+  if (boxModalNote) boxModalNote.innerText = node.note || '';
   renderModalMedia(node);
   boxModalOverlay.classList.remove('hidden');
 }
@@ -654,7 +690,7 @@ function renderSidebar() {
 }
 
 // Spawn Node (Supports branch color inheritance and task checkboxes)
-function spawnNode(title = '', body = '', media = [], files = [], x = null, y = null, parentId = null, color = null) {
+function spawnNode(title = '', body = '', media = [], files = [], x = null, y = null, parentId = null, color = null, note = '') {
   const pIds = parentId ? [parentId] : [];
   let nodeColor = color;
   if (!nodeColor && parentId) {
@@ -665,6 +701,7 @@ function spawnNode(title = '', body = '', media = [], files = [], x = null, y = 
     id: 'box-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
     title: title || '',
     body: body || '',
+    note: note || '',
     media: media || [],
     files: files || [],
     color: nodeColor || null,
@@ -762,8 +799,22 @@ function renderCanvas() {
       <input type="checkbox" class="node-checkbox" ${node.isCompleted ? 'checked' : ''} title="Mark done">
     ` : '';
 
+    const noteHtml = (node.note && node.note.trim()) ? `
+      <div class="box-note-area">
+        <div class="box-note-header">
+          <span class="box-note-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+            Note
+          </span>
+          <button type="button" class="box-note-delete-btn" title="Delete Note">&times;</button>
+        </div>
+        <div class="box-note-body" contenteditable="true" data-placeholder="Type note details...">${escapeHtml(node.note)}</div>
+      </div>
+    ` : '';
+
     const cardContent = document.createElement('div');
     cardContent.innerHTML = `
+      <div class="card-drag-bar" title="Drag to move box"></div>
       <div class="port-dot left" title="Connect Here"></div>
       <div class="port-dot right" title="Drag Wire to Connect"></div>
       <div class="port-dot top" title="Drag Wire to Connect"></div>
@@ -774,6 +825,7 @@ function renderCanvas() {
         <div class="box-body" contenteditable="true" data-placeholder="Type text here...">${escapeHtml(node.body || '')}</div>
       </div>
 
+      ${noteHtml}
       ${mediaHtml}
       ${filesHtml}
 
@@ -782,9 +834,17 @@ function renderCanvas() {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           <span>+ Branch</span>
         </button>
+        <button type="button" class="strip-btn add-note-btn ${node.note ? 'has-note' : ''}" title="${node.note ? 'Edit Note' : 'Add Note'}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+          <span>${node.note ? 'Note' : '+ Note'}</span>
+        </button>
         <button type="button" class="strip-btn options-btn" title="Color & Options">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg>
           <span>Options</span>
+        </button>
+        <button type="button" class="strip-btn delete-btn" title="Delete Box">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          <span>Delete</span>
         </button>
       </div>
       <div class="resize-handle" title="Resize Box"></div>
@@ -795,6 +855,10 @@ function renderCanvas() {
     }
 
     const bodyEl = card.querySelector('.box-body');
+
+    bodyEl.addEventListener('focus', () => {
+      selectNode(node.id);
+    });
 
     bodyEl.addEventListener('input', () => {
       node.body = bodyEl.innerText;
@@ -816,6 +880,57 @@ function renderCanvas() {
         bodyEl.blur();
       }
     });
+
+    const noteBodyEl = card.querySelector('.box-note-body');
+    if (noteBodyEl) {
+      noteBodyEl.addEventListener('focus', () => {
+        selectNode(node.id);
+      });
+      noteBodyEl.addEventListener('input', () => {
+        node.note = noteBodyEl.innerText;
+        requestAnimationFrame(renderConnections);
+        saveState();
+      });
+      noteBodyEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          noteBodyEl.blur();
+        }
+      });
+    }
+
+    const noteDeleteBtn = card.querySelector('.box-note-delete-btn');
+    if (noteDeleteBtn) {
+      noteDeleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        node.note = '';
+        saveState();
+        renderCanvas();
+      });
+    }
+
+    const addNoteBtn = card.querySelector('.add-note-btn');
+    if (addNoteBtn) {
+      addNoteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectNode(node.id);
+        if (node.note && node.note.trim()) {
+          focusNodeNote(node.id);
+        } else {
+          node.note = 'Note details...';
+          saveState();
+          renderCanvas();
+          focusNodeNote(node.id);
+        }
+      });
+    }
+
+    const deleteCardBtn = card.querySelector('.strip-btn.delete-btn');
+    if (deleteCardBtn) {
+      deleteCardBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteNodeById(node.id);
+      });
+    }
 
     // Checkbox toggle
     const chk = card.querySelector('.node-checkbox');
@@ -899,18 +1014,40 @@ function renderCanvas() {
     });
 
     card.addEventListener('pointerdown', (e) => {
-      if (e.target === bodyEl || e.target.closest('button') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.port-dot') || e.target.closest('.resize-handle') || e.target.closest('.collapse-toggle-btn') || e.target.classList.contains('node-checkbox')) return;
+      if (e.target.closest('button') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.port-dot') || e.target.closest('.resize-handle') || e.target.closest('.collapse-toggle-btn') || e.target.classList.contains('node-checkbox')) return;
       e.stopPropagation();
 
       selectNode(node.id);
-      draggingCardNode = node;
 
       const canvasRect = canvasContainer.getBoundingClientRect();
       const pointerCanvasX = (e.clientX - canvasRect.left - state.panX) / state.scale;
       const pointerCanvasY = (e.clientY - canvasRect.top - state.panY) / state.scale;
 
-      grabOffsetX = pointerCanvasX - node.x;
-      grabOffsetY = pointerCanvasY - node.y;
+      const grabX = pointerCanvasX - node.x;
+      const grabY = pointerCanvasY - node.y;
+
+      const isDragBar = !!e.target.closest('.card-drag-bar');
+      const isEditable = e.target.isContentEditable || e.target.classList.contains('box-body') || e.target.classList.contains('box-note-body');
+
+      if (isDragBar) {
+        draggingCardNode = node;
+        grabOffsetX = grabX;
+        grabOffsetY = grabY;
+        card.classList.add('dragging');
+        try { card.setPointerCapture(e.pointerId); } catch (err) {}
+      } else {
+        potentialDrag = {
+          node: node,
+          card: card,
+          startX: e.clientX,
+          startY: e.clientY,
+          grabOffsetX: grabX,
+          grabOffsetY: grabY,
+          pointerId: e.pointerId,
+          targetEl: e.target,
+          isEditable: isEditable
+        };
+      }
     });
 
     const addChildBtn = card.querySelector('.add-child-btn');
@@ -1099,6 +1236,22 @@ function setupGlobalPointerMovement() {
   let panStartY = 0;
 
   window.addEventListener('pointermove', (e) => {
+    if (potentialDrag) {
+      const dist = Math.hypot(e.clientX - potentialDrag.startX, e.clientY - potentialDrag.startY);
+      if (dist > 4) {
+        draggingCardNode = potentialDrag.node;
+        grabOffsetX = potentialDrag.grabOffsetX;
+        grabOffsetY = potentialDrag.grabOffsetY;
+        potentialDrag.card.classList.add('dragging');
+        try { potentialDrag.card.setPointerCapture(potentialDrag.pointerId); } catch (err) {}
+
+        if (document.activeElement && (document.activeElement.isContentEditable || document.activeElement.tagName === 'INPUT')) {
+          document.activeElement.blur();
+        }
+        potentialDrag = null;
+      }
+    }
+
     if (isResizingCardNode) {
       const dx = (e.clientX - resizeStartPointerX) / state.scale;
       const dy = (e.clientY - resizeStartPointerY) / state.scale;
@@ -1160,12 +1313,21 @@ function setupGlobalPointerMovement() {
   });
 
   window.addEventListener('pointerup', (e) => {
+    if (potentialDrag) {
+      if (potentialDrag.isEditable && potentialDrag.targetEl) {
+        potentialDrag.targetEl.focus();
+      }
+      potentialDrag = null;
+    }
+
     if (isResizingCardNode) {
       isResizingCardNode = null;
       saveState();
     }
 
     if (draggingCardNode) {
+      const cardEl = nodesLayer.querySelector(`[data-node-id="${draggingCardNode.id}"]`);
+      if (cardEl) cardEl.classList.remove('dragging');
       draggingCardNode = null;
       saveState();
     }
@@ -1341,6 +1503,18 @@ function setupEventListeners() {
       const node = state.nodes.find(n => n.id === activeModalNodeId);
       if (node) {
         node.body = boxModalBody.innerText;
+        renderCanvas();
+        saveState();
+      }
+    });
+  }
+
+  if (boxModalNote) {
+    boxModalNote.addEventListener('input', () => {
+      if (!activeModalNodeId) return;
+      const node = state.nodes.find(n => n.id === activeModalNodeId);
+      if (node) {
+        node.note = boxModalNote.innerText;
         renderCanvas();
         saveState();
       }
@@ -1783,7 +1957,10 @@ function generateMarkdownOutline() {
     visited.add(n.id);
 
     const indent = '  '.repeat(depth);
-    const text = (n.body || n.title || 'Untitled Node').trim().replace(/\n+/g, ' ');
+    let text = (n.body || n.title || 'Untitled Node').trim().replace(/\n+/g, ' ');
+    if (n.note && n.note.trim()) {
+      text += ` (Note: ${n.note.trim().replace(/\n+/g, ' ')})`;
+    }
     result += `${indent}- ${text}\n`;
 
     const children = state.nodes.filter(c => (c.parentIds && c.parentIds.includes(n.id)) || c.parentId === n.id);
