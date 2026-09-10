@@ -193,49 +193,57 @@ html, body, #app {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 14px;
+  height: 18px;
   cursor: grab;
   touch-action: none;
-  opacity: 0.4;
+  opacity: 0.5;
   transition: opacity 0.15s ease, background-color 0.15s ease;
   user-select: none;
   -webkit-user-select: none;
-  margin-bottom: 2px;
-  border-radius: 4px;
-  width: 100%;
+  margin: -4px -6px 4px -6px;
+  padding: 4px 0;
+  border-radius: 6px 6px 0 0;
+  width: calc(100% + 12px);
 }
 
-.card-drag-bar::after {
-  content: '';
-  width: 26px;
-  height: 3px;
+.drag-bar-pill {
+  width: 28px;
+  height: 3.5px;
   background: var(--text-dim);
   border-radius: 2px;
+  pointer-events: none;
   transition: width 0.15s ease, background 0.15s ease;
 }
 
 .text-box-card:hover .card-drag-bar,
 .text-box-card.selected .card-drag-bar {
-  opacity: 0.85;
+  opacity: 0.95;
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.text-box-card:hover .card-drag-bar::after,
-.text-box-card.selected .card-drag-bar::after {
+.text-box-card:hover .drag-bar-pill,
+.text-box-card.selected .drag-bar-pill {
   background: var(--accent-cyan);
-  width: 34px;
+  width: 38px;
 }
 
-@media (hover: none), (max-width: 1024px) {
+.text-box-card.dragging .card-drag-bar {
+  cursor: grabbing;
+}
+
+@media (pointer: coarse), (hover: none), (max-width: 1024px) {
   .card-drag-bar {
-    height: 22px;
-    background: rgba(255, 255, 255, 0.04);
-    opacity: 0.8;
+    height: 28px;
+    padding: 6px 0;
+    margin: -4px -6px 6px -6px;
+    background: rgba(255, 255, 255, 0.05);
+    opacity: 0.9 !important;
   }
-  .card-drag-bar::after {
-    width: 38px;
-    height: 4px;
+  .drag-bar-pill {
+    width: 44px;
+    height: 4.5px;
     background: var(--accent-cyan);
-    opacity: 0.75;
+    opacity: 0.85;
   }
 }
 

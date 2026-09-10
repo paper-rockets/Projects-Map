@@ -946,14 +946,17 @@ function renderConnections() {
 function setupGlobalPointerMovement() {
   window.addEventListener('pointermove', (e) => {
     if (potentialDrag) {
-      const sel = window.getSelection ? window.getSelection().toString() : '';
-      if (sel && sel.length > 0) {
-        potentialDrag = null;
-        return;
+      if (!potentialDrag.isTouch) {
+        const sel = window.getSelection ? window.getSelection().toString() : '';
+        if (sel && sel.length > 0) {
+          potentialDrag = null;
+          return;
+        }
       }
 
       const dist = Math.hypot(e.clientX - potentialDrag.startX, e.clientY - potentialDrag.startY);
-      if (dist > 6) {
+      if (dist > 5) {
+        e.preventDefault();
         draggingCardNode = potentialDrag.node;
         grabOffsetX = potentialDrag.grabOffsetX;
         grabOffsetY = potentialDrag.grabOffsetY;
@@ -985,6 +988,7 @@ function setupGlobalPointerMovement() {
     }
 
     if (draggingCardNode) {
+      e.preventDefault();
       const canvasRect = canvasContainer.getBoundingClientRect();
       const pointerCanvasX = (e.clientX - canvasRect.left - state.panX) / state.scale;
       const pointerCanvasY = (e.clientY - canvasRect.top - state.panY) / state.scale;

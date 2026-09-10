@@ -634,7 +634,7 @@ function renderCanvas() {
     ` : '';
 
     card.innerHTML = `
-      <div class="card-drag-bar" title="Drag to move"></div>
+      <div class="card-drag-bar" title="Drag to move"><span class="drag-bar-pill"></span></div>
       <div class="port-dot left" title="Connect Here"></div>
       <div class="port-dot right" title="Drag Wire to Connect"></div>
       <div class="port-dot top" title="Drag Wire to Connect"></div>
@@ -980,7 +980,8 @@ function setupGlobalPointerMovement() {
       }
 
       const dist = Math.hypot(e.clientX - potentialDrag.startX, e.clientY - potentialDrag.startY);
-      if (dist > 6) {
+      if (dist > 5) {
+        e.preventDefault();
         draggingCardNode = potentialDrag.node;
         grabOffsetX = potentialDrag.grabOffsetX;
         grabOffsetY = potentialDrag.grabOffsetY;
@@ -1012,6 +1013,7 @@ function setupGlobalPointerMovement() {
     }
 
     if (draggingCardNode) {
+      e.preventDefault();
       const canvasRect = canvasContainer.getBoundingClientRect();
       const pointerCanvasX = (e.clientX - canvasRect.left - state.panX) / state.scale;
       const pointerCanvasY = (e.clientY - canvasRect.top - state.panY) / state.scale;
@@ -1087,28 +1089,6 @@ function setupGlobalPointerMovement() {
       saveState();
     }
 
-    activePointers.delete(e.pointerId);
-    if (activePointers.size === 0) isPanningCanvas = false;
-  });
-
-  window.addEventListener('pointercancel', (e) => {
-    if (potentialDrag) {
-      try { potentialDrag.card.releasePointerCapture(potentialDrag.pointerId); } catch (err) {}
-      potentialDrag = null;
-    }
-    if (draggingCardNode) {
-      const cardEl = nodesLayer.querySelector(`[data-node-id="${draggingCardNode.id}"]`);
-      if (cardEl) {
-        cardEl.classList.remove('dragging');
-        try { cardEl.releasePointerCapture(e.pointerId); } catch (err) {}
-      }
-      draggingCardNode = null;
-      saveState();
-    }
-    activePointers.delete(e.pointerId);
-    if (activePointers.size === 0) isPanningCanvas = false;
-  });
-
     if (isLinkingWire) {
       isLinkingWire = false;
       const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
@@ -1131,6 +1111,31 @@ function setupGlobalPointerMovement() {
       renderConnections();
     }
 
+    activePointers.delete(e.pointerId);
+    if (activePointers.size === 0) {
+      isPanningCanvas = false;
+      canvasContainer.classList.remove('panning');
+    }
+  });
+
+  window.addEventListener('pointercancel', (e) => {
+    if (potentialDrag) {
+      try { potentialDrag.card.releasePointerCapture(potentialDrag.pointerId); } catch (err) {}
+      potentialDrag = null;
+    }
+    if (draggingCardNode) {
+      const cardEl = nodesLayer.querySelector(`[data-node-id="${draggingCardNode.id}"]`);
+      if (cardEl) {
+        cardEl.classList.remove('dragging');
+        try { cardEl.releasePointerCapture(e.pointerId); } catch (err) {}
+      }
+      draggingCardNode = null;
+      saveState();
+    }
+    if (isLinkingWire) {
+      isLinkingWire = false;
+      renderConnections();
+    }
     activePointers.delete(e.pointerId);
     if (activePointers.size === 0) {
       isPanningCanvas = false;
