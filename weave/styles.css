@@ -188,31 +188,55 @@ html, body, #app {
   border-left-width: 3.5px;
 }
 
-/* Card Drag Handle Bar (Subtle Top Grip) */
+/* Card Drag Handle Bar (Dedicated Top Grip) */
 .card-drag-bar {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 6px;
+  height: 14px;
   cursor: grab;
   touch-action: none;
-  opacity: 0.25;
-  transition: opacity 0.15s ease;
+  opacity: 0.4;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
   user-select: none;
-  margin-bottom: 1px;
+  -webkit-user-select: none;
+  margin-bottom: 2px;
+  border-radius: 4px;
+  width: 100%;
 }
 
 .card-drag-bar::after {
   content: '';
-  width: 20px;
-  height: 2px;
+  width: 26px;
+  height: 3px;
   background: var(--text-dim);
-  border-radius: 1px;
+  border-radius: 2px;
+  transition: width 0.15s ease, background 0.15s ease;
 }
 
 .text-box-card:hover .card-drag-bar,
 .text-box-card.selected .card-drag-bar {
-  opacity: 0.7;
+  opacity: 0.85;
+}
+
+.text-box-card:hover .card-drag-bar::after,
+.text-box-card.selected .card-drag-bar::after {
+  background: var(--accent-cyan);
+  width: 34px;
+}
+
+@media (hover: none), (max-width: 1024px) {
+  .card-drag-bar {
+    height: 22px;
+    background: rgba(255, 255, 255, 0.04);
+    opacity: 0.8;
+  }
+  .card-drag-bar::after {
+    width: 38px;
+    height: 4px;
+    background: var(--accent-cyan);
+    opacity: 0.75;
+  }
 }
 
 /* Text Box Body */
@@ -232,7 +256,7 @@ html, body, #app {
   line-height: 1.4;
   user-select: text !important;
   -webkit-user-select: text !important;
-  touch-action: pan-y !important;
+  touch-action: none;
 }
 
 .box-body:focus {
@@ -348,7 +372,7 @@ html, body, #app {
   overflow-y: auto;
   user-select: text !important;
   -webkit-user-select: text !important;
-  touch-action: pan-y !important;
+  touch-action: none;
 }
 
 .box-note-body:empty:before {

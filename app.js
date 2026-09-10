@@ -588,7 +588,7 @@ function renderCanvas() {
     ` : '';
 
     card.innerHTML = `
-      <div class="card-drag-bar" title="Drag to move"></div>
+      <div class="card-drag-bar" title="Drag to move"><span class="drag-bar-pill"></span></div>
       <div class="port-dot left" title="Connect Here"></div>
       <div class="port-dot right" title="Drag Wire to Connect"></div>
       <div class="port-dot top" title="Drag Wire to Connect"></div>
@@ -630,9 +630,12 @@ function renderCanvas() {
     });
 
     bodyEl.addEventListener('pointerdown', (e) => {
-      // Allow 100% native cursor placement & text selection without dragging card
-      e.stopPropagation();
-      selectNode(node.id);
+      // If actively focused and typing, stop propagation to allow native text selection
+      if (document.activeElement === bodyEl) {
+        e.stopPropagation();
+        return;
+      }
+      // If not focused, allow bubbling to card so tablet users can drag the node
     });
 
     bodyEl.addEventListener('dblclick', (e) => {
@@ -666,8 +669,10 @@ function renderCanvas() {
     if (noteBodyEl) {
       noteBodyEl.addEventListener('focus', () => selectNode(node.id));
       noteBodyEl.addEventListener('pointerdown', (e) => {
-        e.stopPropagation();
-        selectNode(node.id);
+        if (document.activeElement === noteBodyEl) {
+          e.stopPropagation();
+          return;
+        }
       });
       noteBodyEl.addEventListener('dblclick', (e) => {
         e.stopPropagation();
@@ -798,23 +803,16 @@ function renderCanvas() {
       });
     });
 
-    // Pointer Drag on Card (Dedicated Drag Bar or empty card margins only)
+    // Pointer Drag on Card (Dedicated Drag Bar or Card Body)
     card.addEventListener('pointerdown', (e) => {
       if (e.target.closest('button') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.port-dot') || e.target.closest('.resize-handle') || e.target.closest('.collapse-toggle-btn') || e.target.classList.contains('node-checkbox')) return;
 
-      const isEditable = e.target.isContentEditable ||
-                         e.target.classList.contains('box-body') ||
-                         e.target.classList.contains('box-note-body') ||
-                         e.target.closest('.box-body') ||
-                         e.target.closest('.box-note-body') ||
-                         e.target.tagName === 'INPUT' ||
-                         e.target.tagName === 'TEXTAREA';
+      const isDragBar = !!e.target.closest('.card-drag-bar');
+      const isFocusedText = (document.activeElement === bodyEl || (noteBodyEl && document.activeElement === noteBodyEl));
 
-      if (isEditable) {
-        selectNode(node.id);
-        closeAllPopovers();
-        potentialDrag = null;
-        return; // Text interaction only — NEVER initiate card drag here
+      // If user is actively typing inside text and not touching the top drag bar, allow text selection
+      if (isFocusedText && !isDragBar && (e.target === bodyEl || (noteBodyEl && e.target === noteBodyEl) || !!e.target.closest('.box-body') || !!e.target.closest('.box-note-body'))) {
+        return;
       }
 
       e.stopPropagation();
@@ -828,8 +826,6 @@ function renderCanvas() {
 
       const grabX = pointerCanvasX - node.x;
       const grabY = pointerCanvasY - node.y;
-
-      const isDragBar = !!e.target.closest('.card-drag-bar');
 
       if (isDragBar) {
         draggingCardNode = node;
@@ -847,8 +843,9 @@ function renderCanvas() {
           grabOffsetY: grabY,
           pointerId: e.pointerId,
           targetEl: e.target,
-          isEditable: false
+          isEditable: (e.target === bodyEl || (noteBodyEl && e.target === noteBodyEl) || !!e.target.closest('.box-body') || !!e.target.closest('.box-note-body'))
         };
+        try { card.setPointerCapture(e.pointerId); } catch (err) {}
       }
     });
 
@@ -1039,8 +1036,12 @@ function setupGlobalPointerMovement() {
   window.addEventListener('pointerup', (e) => {
     if (potentialDrag) {
       if (potentialDrag.isEditable && potentialDrag.targetEl) {
-        potentialDrag.targetEl.focus();
+        const editableEl = potentialDrag.targetEl.closest('.box-body') || potentialDrag.targetEl.closest('.box-note-body') || potentialDrag.targetEl;
+        if (editableEl && typeof editableEl.focus === 'function') {
+          editableEl.focus();
+        }
       }
+      try { potentialDrag.card.releasePointerCapture(potentialDrag.pointerId); } catch (err) {}
       potentialDrag = null;
     }
 
@@ -1051,7 +1052,10 @@ function setupGlobalPointerMovement() {
 
     if (draggingCardNode) {
       const cardEl = nodesLayer.querySelector(`[data-node-id="${draggingCardNode.id}"]`);
-      if (cardEl) cardEl.classList.remove('dragging');
+      if (cardEl) {
+        cardEl.classList.remove('dragging');
+        try { cardEl.releasePointerCapture(e.pointerId); } catch (err) {}
+      }
       draggingCardNode = null;
       saveState();
     }
@@ -1078,6 +1082,31 @@ function setupGlobalPointerMovement() {
       renderConnections();
     }
 
+    activePointers.delete(e.pointerId);
+    if (activePointers.size === 0) {
+      isPanningCanvas = false;
+      canvasContainer.classList.remove('panning');
+    }
+  });
+
+  window.addEventListener('pointercancel', (e) => {
+    if (potentialDrag) {
+      try { potentialDrag.card.releasePointerCapture(potentialDrag.pointerId); } catch (err) {}
+      potentialDrag = null;
+    }
+    if (draggingCardNode) {
+      const cardEl = nodesLayer.querySelector(`[data-node-id="${draggingCardNode.id}"]`);
+      if (cardEl) {
+        cardEl.classList.remove('dragging');
+        try { cardEl.releasePointerCapture(e.pointerId); } catch (err) {}
+      }
+      draggingCardNode = null;
+      saveState();
+    }
+    if (isLinkingWire) {
+      isLinkingWire = false;
+      renderConnections();
+    }
     activePointers.delete(e.pointerId);
     if (activePointers.size === 0) {
       isPanningCanvas = false;
