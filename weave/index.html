@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <title>Ultra Minimal Studio Mind Map</title>
+  <title>Mind V2 — Weave & Execution Orchestrator</title>
   <meta name="theme-color" content="#141417">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=31">
+  <link rel="stylesheet" href="styles.css?v=32">
 </head>
 <body>
   <div id="app">
@@ -23,11 +23,19 @@
       </div>
     </div>
 
-    <!-- Minimal Floating Dock: [+] [Search] [✦ AI] [•••] -->
+    <!-- Minimal Floating Dock: [+] [Search] [✦ Weave] [⚡ Run] [✦ AI] [•••] -->
     <nav id="floating-dock" class="floating-dock" aria-label="Main Navigation">
       <button type="button" id="dock-add-btn" class="dock-btn" aria-label="Add Idea or Branch" title="Add Idea / Branch">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span class="dock-btn-label">Add</span>
+      </button>
+      <button type="button" id="dock-weave-btn" class="dock-btn" aria-label="Weave Suggestions" title="Weave 2-3 Next Suggestions">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="dock-btn-label">Weave</span>
+      </button>
+      <button type="button" id="dock-orch-btn" class="dock-btn" aria-label="Execution Orchestrator" title="Execution Orchestrator">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span class="dock-btn-label">Run</span>
       </button>
       <button type="button" id="dock-search-btn" class="dock-btn" aria-label="Search & Commands" title="Search or ⌘K">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -115,10 +123,10 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
         <span>Theme: <strong id="theme-btn-text">Dark</strong></span>
       </button>
-      <a href="./weave/" class="popover-item" style="text-decoration:none; color:inherit;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        <span>Switch to Weave V2 (Live)</span>
-      </a>
+      <button type="button" class="popover-item" id="more-settings-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>AI Routing & Keys</span>
+      </button>
     </div>
 
     <!-- Command Palette Modal (Ctrl/Cmd+K) -->
@@ -207,11 +215,13 @@
         <div id="box-modal-body" class="box-modal-body" contenteditable="true" data-placeholder="Type main topic here..."></div>
         <div class="box-modal-note-section">
           <div style="font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px;">Note Details</div>
-          <div id="box-modal-note" class="box-modal-body" contenteditable="true" data-placeholder="Type note details here..." style="min-height: 60px; max-height: 120px;"></div>
+          <div id="box-modal-note" class="box-modal-body" contenteditable="true" data-placeholder="Type rich note details, paragraphs, or checklists here..."></div>
         </div>
         <div id="box-modal-media" class="box-modal-media"></div>
         <div id="box-modal-files" class="box-modal-files"></div>
         <div class="box-modal-actions">
+          <button id="modal-weave-btn" class="box-btn">✦ Weave 3 Ideas</button>
+          <button id="modal-orchestrate-btn" class="box-btn">⚡ Orchestrate</button>
           <button id="modal-ai-expand-btn" class="box-btn">AI Expand</button>
           <button id="modal-add-img-btn" class="box-btn">+ Image</button>
           <button id="modal-add-vid-btn" class="box-btn">+ Video</button>
@@ -266,9 +276,28 @@
         <button type="button" class="color-swatch-dot" data-color="#0984e3" style="--swatch-color: #0984e3;" title="Blue"></button>
       </div>
 
+      <!-- Box Size Presets Row -->
+      <div class="context-size-row">
+        <span class="context-size-label">Size:</span>
+        <div class="context-size-buttons">
+          <button type="button" class="context-size-btn" data-size="small" title="Small (Compact)">S</button>
+          <button type="button" class="context-size-btn" data-size="medium" title="Medium (Standard)">M</button>
+          <button type="button" class="context-size-btn" data-size="large" title="Large (Spacious)">L</button>
+          <button type="button" class="context-size-btn" data-size="auto" title="Auto Fit Content">Fit</button>
+        </div>
+      </div>
+
       <div class="context-divider"></div>
 
       <div class="context-menu-actions">
+        <button type="button" class="context-menu-item" data-action="weave-suggest">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>✦ Weave 3 Ideas</span>
+        </button>
+        <button type="button" class="context-menu-item" data-action="orchestrate-node">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>⚡ Orchestrate</span>
+        </button>
         <button type="button" class="context-menu-item" data-action="add-branch">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           <span>Add Branch</span>
@@ -305,13 +334,124 @@
       </div>
     </div>
 
+    <!-- Floating Weave Suggestions Dock -->
+    <div id="weave-dock" class="weave-dock hidden">
+      <div class="weave-header">
+        <div class="weave-title-col">
+          <div class="weave-title-row">
+            <span class="weave-pill-tag">✦ WEAVE</span>
+            <span id="weave-target-title" class="weave-target-title">Selected Idea</span>
+          </div>
+          <span id="weave-status-hint" class="weave-status-hint">Generating 3 branches...</span>
+        </div>
+        <div class="weave-controls">
+          <label class="weave-auto-label" title="Auto-suggest branches when clicking any node">
+            <input type="checkbox" id="weave-auto-toggle" checked>
+            <span>Auto</span>
+          </label>
+          <button type="button" id="weave-refresh-btn" class="weave-control-btn" title="Regenerate 3 new suggestions">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          </button>
+          <button type="button" id="weave-close-btn" class="weave-control-btn" title="Close Weave">&times;</button>
+        </div>
+      </div>
+      <div id="weave-suggestions-list" class="weave-suggestions-list">
+        <!-- Dynamic suggestion cards -->
+      </div>
+      <div class="weave-custom-row">
+        <input type="text" id="weave-custom-input" placeholder="Or type your own next branch..." />
+        <button type="button" id="weave-add-custom-btn" class="weave-add-btn">+ Add</button>
+      </div>
+    </div>
+
+    <!-- Execution Orchestrator Modal Overlay -->
+    <div id="orchestrator-modal" class="box-modal-overlay hidden">
+      <div class="box-modal-card orchestrator-card">
+        <div class="box-modal-header">
+          <div class="orchestrator-title-row">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span class="box-modal-title">Execution Orchestrator</span>
+          </div>
+          <button id="close-orchestrator-btn" class="box-modal-close">&times;</button>
+        </div>
+        <div class="orchestrator-body">
+          <div class="orchestrator-node-info">
+            <div class="orch-label">Active Node Context</div>
+            <h3 id="orch-node-title">Idea Name</h3>
+            <div id="orch-node-path" class="orch-node-path">Path: Project -> Subtask</div>
+          </div>
+          <div class="orchestrator-actions-bar">
+            <button type="button" id="orch-generate-btn" class="box-btn primary-box-btn">⚡ Plan & Orchestrate</button>
+            <button type="button" id="orch-copy-prompt-btn" class="box-btn">Copy Agent Prompt</button>
+            <button type="button" id="orch-save-notes-btn" class="box-btn">Save Plan to Notes</button>
+          </div>
+          <div id="orch-status-bar" class="orch-status-bar hidden">Gemini is synthesizing actionable execution steps...</div>
+          <div id="orch-output-area" class="orch-output-area">
+            <div class="orch-placeholder">Click <strong>⚡ Plan & Orchestrate</strong> to break down this mind map node into concrete steps, a checklist, and an Anti-Gravity / Codex prompt.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Settings & Routing Modal -->
+    <div id="ai-settings-modal" class="box-modal-overlay hidden">
+      <div class="box-modal-card settings-card">
+        <div class="box-modal-header">
+          <span class="box-modal-title">AI Provider & Routing Settings</span>
+          <button id="close-ai-settings-btn" class="box-modal-close">&times;</button>
+        </div>
+        <div class="settings-body">
+          <p class="settings-desc">Choose which AI provider generates your suggestions, mind maps, and execution plans.</p>
+          
+          <div class="settings-group">
+            <label class="settings-label" for="ai-provider-select">Active AI Brain</label>
+            <select id="ai-provider-select" class="settings-select">
+              <option value="gemini" selected>Google Gemini (Connected & Ready)</option>
+              <option value="claude">Anthropic Claude (Requires Claude Key)</option>
+              <option value="openai">OpenAI / Codex (Requires OpenAI Key)</option>
+            </select>
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-label" for="gemini-key-input">Google Gemini Key</label>
+            <input type="password" id="gemini-key-input" class="settings-input" placeholder="Active via local config" />
+            <span class="settings-hint">Your server is connected to your Gemini API key.</span>
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-label" for="claude-key-input">Anthropic Claude Key (Optional)</label>
+            <input type="password" id="claude-key-input" class="settings-input" placeholder="sk-ant-api..." />
+            <span class="settings-hint">Paste your key here whenever you get a Claude key.</span>
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-label" for="openai-key-input">OpenAI / Codex Key (Optional)</label>
+            <input type="password" id="openai-key-input" class="settings-input" placeholder="sk-proj-..." />
+            <span class="settings-hint">Paste your key here whenever you get an OpenAI key.</span>
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-checkbox-row">
+              <input type="checkbox" id="settings-auto-weave" checked>
+              <span>Auto-Weave: Automatically suggest 2-3 next steps when clicking nodes</span>
+            </label>
+          </div>
+
+          <div class="settings-actions">
+            <button type="button" id="save-settings-btn" class="box-btn primary-box-btn">Save Settings</button>
+            <span id="settings-save-feedback" class="settings-feedback hidden">Saved successfully</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Hidden Attachment Pickers for Context Menu -->
     <input type="file" id="hidden-image-picker" accept="image/*" style="display: none;">
     <input type="file" id="hidden-file-picker" style="display: none;">
   </div>
 
   <script src="config.js"></script>
-  <script src="app.js?v=31"></script>
+  <script src="app.js?v=32"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
