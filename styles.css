@@ -453,10 +453,33 @@ html, body, #app {
     flex-direction: row;
     border-radius: 6px;
     padding: 4px 8px;
+    overflow-x: auto;
+    max-width: calc(100vw - 24px);
+    -webkit-overflow-scrolling: touch;
   }
   .tool-divider { width: 1px; height: 16px; margin: 0 2px; }
   .sidebar { width: 85vw; }
   .text-box-card { max-width: 85vw; }
+
+  /* Touch-friendly sizing for mobile thumbs */
+  .strip-btn {
+    padding: 5px 8px;
+    font-size: 12px;
+    min-height: 28px;
+  }
+  .color-swatch-dot {
+    width: 22px;
+    height: 22px;
+  }
+  .context-menu-item {
+    padding: 9px 12px;
+    font-size: 13px;
+    min-height: 36px;
+  }
+  .node-checkbox {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 /* Box Modal Overlay */
