@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=36">
+  <link rel="stylesheet" href="styles.css?v=37">
 </head>
 <body>
   <div id="app">
@@ -463,11 +463,11 @@
 
   <script src="../config.js" onerror="this.remove()"></script>
   <script src="config.js" onerror="this.remove()"></script>
-  <script src="app.js?v=36"></script>
+  <script src="app.js?v=37"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=36')
+        navigator.serviceWorker.register('./sw.js?v=37')
           .then(reg => {
             reg.update();
             console.log('PWA ServiceWorker registered & updated:', reg.scope);

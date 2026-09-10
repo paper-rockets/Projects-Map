@@ -634,7 +634,6 @@ function renderCanvas() {
     ` : '';
 
     card.innerHTML = `
-      <div class="card-drag-bar" title="Drag to move"><span class="drag-bar-pill"></span></div>
       <div class="port-dot left" title="Connect Here"></div>
       <div class="port-dot right" title="Drag Wire to Connect"></div>
       <div class="port-dot top" title="Drag Wire to Connect"></div>
@@ -830,20 +829,19 @@ function renderCanvas() {
       });
     });
 
-    // Pointer Drag on Card (Dedicated Drag Bar or empty card margins only)
+    // Pointer Drag on Card (Entire card is draggable; tap to edit)
     card.addEventListener('pointerdown', (e) => {
       if (e.target.closest('button') || e.target.closest('video') || e.target.closest('a') || e.target.closest('.port-dot') || e.target.closest('.resize-handle') || e.target.closest('.collapse-toggle-btn') || e.target.classList.contains('node-checkbox')) return;
 
-      const isDragBar = !!e.target.closest('.card-drag-bar');
-      const isFocusedText = (document.activeElement === bodyEl || (noteBodyEl && document.activeElement === noteBodyEl));
+      const isTextBody = (e.target === bodyEl || (noteBodyEl && e.target === noteBodyEl) || !!e.target.closest('.box-body') || !!e.target.closest('.box-note-body'));
+      const isFocusedText = document.activeElement === e.target && (e.target.isContentEditable || e.target.tagName === 'INPUT');
 
-      // If user is actively typing inside text and not touching the top drag bar, allow text selection
-      if (isFocusedText && !isDragBar && (e.target === bodyEl || (noteBodyEl && e.target === noteBodyEl) || !!e.target.closest('.box-body') || !!e.target.closest('.box-note-body'))) {
+      // If user is already actively typing inside this text field, allow cursor placement
+      if (isFocusedText && isTextBody) {
         return;
       }
 
       e.stopPropagation();
-
       selectNode(node.id);
       closeAllPopovers();
 
@@ -854,26 +852,19 @@ function renderCanvas() {
       const grabX = pointerCanvasX - node.x;
       const grabY = pointerCanvasY - node.y;
 
-      if (isDragBar) {
-        draggingCardNode = node;
-        grabOffsetX = grabX;
-        grabOffsetY = grabY;
-        card.classList.add('dragging');
-        try { card.setPointerCapture(e.pointerId); } catch (err) {}
-      } else {
-        potentialDrag = {
-          node: node,
-          card: card,
-          startX: e.clientX,
-          startY: e.clientY,
-          grabOffsetX: grabX,
-          grabOffsetY: grabY,
-          pointerId: e.pointerId,
-          targetEl: e.target,
-          isEditable: (e.target === bodyEl || (noteBodyEl && e.target === noteBodyEl) || !!e.target.closest('.box-body') || !!e.target.closest('.box-note-body'))
-        };
-        try { card.setPointerCapture(e.pointerId); } catch (err) {}
-      }
+      potentialDrag = {
+        node: node,
+        card: card,
+        startX: e.clientX,
+        startY: e.clientY,
+        grabOffsetX: grabX,
+        grabOffsetY: grabY,
+        pointerId: e.pointerId,
+        targetEl: e.target,
+        isTouch: e.pointerType === 'touch' || e.pointerType === 'pen',
+        isEditable: isTextBody
+      };
+      try { card.setPointerCapture(e.pointerId); } catch (err) {}
     });
 
     nodesLayer.appendChild(card);
