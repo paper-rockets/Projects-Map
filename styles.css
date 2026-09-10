@@ -697,6 +697,10 @@ html, body, #app {
   display: none !important;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .popover-item {
   display: flex;
   align-items: center;

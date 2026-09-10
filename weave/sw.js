@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mindmap-weave-v37';
+const CACHE_NAME = 'mindmap-weave-v38';
 const ASSETS = [
   './',
   './index.html',

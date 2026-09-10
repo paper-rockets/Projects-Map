@@ -58,6 +58,7 @@ const createBranchBtn = document.getElementById('create-branch-btn');
 const createMediaBtn = document.getElementById('create-media-btn');
 
 const moreMenu = document.getElementById('more-menu');
+const moreFullscreenBtn = document.getElementById('more-fullscreen-btn');
 const moreAutoLayoutBtn = document.getElementById('more-auto-layout-btn');
 const moreFitMapBtn = document.getElementById('more-fit-map-btn');
 const moreIdeasBtn = document.getElementById('more-ideas-btn');
@@ -71,6 +72,7 @@ const zoomLevelBtn = document.getElementById('zoom-level-btn');
 const zoomLevelEl = document.getElementById('zoom-level');
 const zoomInBtn = document.getElementById('zoom-in-btn');
 const zoomMenu = document.getElementById('zoom-menu');
+const zoomFullscreenBtn = document.getElementById('zoom-fullscreen-btn');
 const zoomFitBtn = document.getElementById('zoom-fit-btn');
 const zoomResetBtn = document.getElementById('zoom-reset-btn');
 const zoomCenterBtn = document.getElementById('zoom-center-btn');
@@ -1181,6 +1183,60 @@ function closeAllPopovers() {
   if (dockMoreBtn) dockMoreBtn.classList.remove('active');
 }
 
+// ==========================================================================
+// Full Screen Support
+// ==========================================================================
+function isFullscreenActive() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+}
+
+function toggleFullscreen() {
+  try {
+    if (isFullscreenActive()) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(err => console.warn('exitFullscreen error', err));
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    } else {
+      const docEl = document.documentElement;
+      if (docEl.requestFullscreen) {
+        docEl.requestFullscreen().catch(err => console.warn('requestFullscreen error', err));
+      } else if (docEl.webkitRequestFullscreen) {
+        docEl.webkitRequestFullscreen();
+      } else if (docEl.mozRequestFullScreen) {
+        docEl.mozRequestFullScreen();
+      } else if (docEl.msRequestFullscreen) {
+        docEl.msRequestFullscreen();
+      }
+    }
+  } catch (err) {
+    console.warn('Fullscreen error:', err);
+  }
+}
+
+function updateFullscreenUI() {
+  const isFs = isFullscreenActive();
+  document.querySelectorAll('#more-fullscreen-btn, #zoom-fullscreen-btn').forEach(btn => {
+    const enterIcon = btn.querySelector('.fs-icon-enter');
+    const exitIcon = btn.querySelector('.fs-icon-exit');
+    const label = btn.querySelector('.fs-btn-label');
+    if (enterIcon) enterIcon.classList.toggle('hidden', isFs);
+    if (exitIcon) exitIcon.classList.toggle('hidden', !isFs);
+    if (label) label.textContent = isFs ? 'Exit Full Screen' : 'Full Screen';
+    btn.setAttribute('title', isFs ? 'Exit Full Screen' : 'Enter Full Screen');
+    btn.setAttribute('aria-label', isFs ? 'Exit Full Screen' : 'Enter Full Screen');
+  });
+}
+
+['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
+  document.addEventListener(evt, updateFullscreenUI);
+});
+
 function setupDockAndMenus() {
   if (dockAddBtn) {
     dockAddBtn.addEventListener('click', (e) => {
@@ -1257,6 +1313,14 @@ function setupDockAndMenus() {
   }
 
   // More Menu actions
+  if (moreFullscreenBtn) {
+    moreFullscreenBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllPopovers();
+      toggleFullscreen();
+    });
+  }
+
   if (moreAutoLayoutBtn) {
     moreAutoLayoutBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1324,6 +1388,14 @@ function setupDockAndMenus() {
     });
   }
 
+  if (zoomFullscreenBtn) {
+    zoomFullscreenBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllPopovers();
+      toggleFullscreen();
+    });
+  }
+
   if (zoomFitBtn) {
     zoomFitBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1388,6 +1460,7 @@ function renderPaletteResults(query) {
     { id: 'act-reset-zoom', title: 'Reset Zoom to 100%', icon: '↺', action: () => { state.scale = 1; updateTransform(); saveState(); } },
     { id: 'act-export-md', title: 'Export Markdown Outline', icon: '↓', action: () => { openIoModal('export'); } },
     { id: 'act-export-png', title: 'Export Canvas PNG', icon: '⬚', action: () => { exportCanvasToPng(); } },
+    { id: 'act-fullscreen', title: 'Toggle Full Screen', icon: '⛶', action: () => { toggleFullscreen(); } },
     { id: 'act-cycle-theme', title: `Switch Theme (Current: ${state.theme})`, icon: '◐', action: () => { cycleTheme(); } }
   ];
 
@@ -2516,6 +2589,13 @@ function setupEventListeners() {
 
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
     if ((boxModalOverlay && !boxModalOverlay.classList.contains('hidden')) || (ioModal && !ioModal.classList.contains('hidden')) || (commandPaletteModal && !commandPaletteModal.classList.contains('hidden'))) return;
+
+    // Full Screen Toggle Shortcut: F or F11
+    if (e.key === 'F11' || ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey)) {
+      e.preventDefault();
+      toggleFullscreen();
+      return;
+    }
 
     if (state.selectedNodeId) {
       const selNode = state.nodes.find(n => n.id === state.selectedNodeId);
