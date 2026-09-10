@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=25">
+  <link rel="stylesheet" href="styles.css?v=26">
 </head>
 <body>
   <div id="app">
@@ -72,7 +72,7 @@
     <!-- Collapsible Gemini AI Chat Panel -->
     <aside id="ai-chat-panel" class="ai-chat-panel hidden">
       <div class="ai-panel-header">
-        <h2>Gemini AI Assistant</h2>
+        <h2>Gemini 3.8 Flash</h2>
         <button id="close-ai-btn" class="icon-btn">&times;</button>
       </div>
       <!-- Built-in Key Active: Hidden from UI -->
@@ -80,7 +80,7 @@
         <input type="password" id="gemini-api-key-input" autocomplete="off" />
       </div>
       <div id="ai-chat-log" class="ai-chat-log">
-        <div class="ai-msg bot">Hi! I am your Gemini AI Assistant. Ask me anything, click "+ To Map", or click "Full Tree" to generate an organized mind map!</div>
+        <div class="ai-msg bot">Hi! I am your Gemini 3.8 Flash AI Assistant. Ask me anything, click "+ To Map", or click "Full Tree" to generate an organized mind map!</div>
       </div>
       <div class="ai-chat-input-area">
         <textarea id="ai-input" placeholder="Ask Gemini or type 'Generate ideas for...'"></textarea>
@@ -212,11 +212,11 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="app.js?v=25"></script>
+  <script src="app.js?v=26"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=25')
+        navigator.serviceWorker.register('./sw.js?v=26')
           .then(reg => {
             reg.update();
             console.log('PWA ServiceWorker registered & updated:', reg.scope);

@@ -92,7 +92,7 @@ html, body, #app {
   border: 1px solid var(--border-color);
   border-radius: 6px;
   backdrop-filter: blur(16px);
-  z-index: 1000;
+  z-index: 60;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
@@ -135,7 +135,7 @@ html, body, #app {
   border: 1px solid var(--border-color);
   border-radius: 6px;
   backdrop-filter: blur(16px);
-  z-index: 1000;
+  z-index: 60;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
@@ -158,8 +158,8 @@ html, body, #app {
   position: fixed;
   top: 0; left: 0;
   width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 180;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1100;
 }
 
 .drawer-overlay.hidden { display: none; }
@@ -172,7 +172,7 @@ html, body, #app {
   height: 100%;
   background: var(--bg-sidebar);
   border-right: 1px solid var(--border-color);
-  z-index: 200;
+  z-index: 1200;
   display: flex;
   flex-direction: column;
   transform: translateX(-100%);
@@ -448,17 +448,96 @@ html, body, #app {
 
 @media (max-width: 768px) {
   .floating-toolbar-left {
-    top: 12px; left: 12px;
+    top: 10px;
+    left: 10px;
+    right: 10px;
     transform: none;
     flex-direction: row;
-    border-radius: 6px;
-    padding: 4px 8px;
+    flex-wrap: nowrap;
+    border-radius: 8px;
+    padding: 5px 8px;
+    gap: 4px;
     overflow-x: auto;
-    max-width: calc(100vw - 24px);
+    max-width: calc(100vw - 20px);
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .floating-toolbar-left::-webkit-scrollbar {
+    display: none;
+  }
+  .tool-btn {
+    padding: 6px 9px;
+    font-size: 11.5px;
+    min-height: 32px;
   }
   .tool-divider { width: 1px; height: 16px; margin: 0 2px; }
-  .sidebar { width: 85vw; }
+
+  .floating-pill-bottom {
+    bottom: 12px;
+    padding: 4px 8px;
+    gap: 4px;
+    border-radius: 8px;
+  }
+  .pill-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+    min-height: 28px;
+  }
+  .pill-text {
+    font-size: 11.5px;
+    min-width: 36px;
+  }
+
+  .sidebar {
+    width: 88vw;
+    max-width: 320px;
+    z-index: 1200;
+  }
+
+  .ai-chat-panel {
+    width: 100vw;
+    max-width: 100vw;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    border-left: none;
+    border-radius: 0;
+    z-index: 1200;
+  }
+  .ai-panel-header {
+    padding: 12px 16px;
+  }
+  .ai-panel-header h2 {
+    font-size: 14px;
+  }
+  .ai-chat-log {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+  .ai-chat-input-area {
+    padding: 10px 12px max(14px, env(safe-area-inset-bottom)) 12px;
+    gap: 8px;
+  }
+  .ai-chat-input-area textarea {
+    height: 52px;
+    font-size: 13px;
+  }
+  .ai-input-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .ai-input-actions .box-btn {
+    flex: 1;
+    min-height: 36px;
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .text-box-card { max-width: 85vw; }
 
   /* Touch-friendly sizing for mobile thumbs */
@@ -480,6 +559,17 @@ html, body, #app {
     width: 16px;
     height: 16px;
   }
+
+  .box-modal-card {
+    max-width: calc(100vw - 24px);
+    padding: 14px 16px;
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  .box-modal-body {
+    max-height: 200px;
+    font-size: 13.5px;
+  }
 }
 
 /* Box Modal Overlay */
@@ -489,7 +579,7 @@ html, body, #app {
   width: 100vw; height: 100vh;
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(12px);
-  z-index: 300;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -586,7 +676,7 @@ html, body, #app {
   height: 100%;
   background: var(--bg-sidebar);
   border-left: 1px solid var(--border-color);
-  z-index: 200;
+  z-index: 1200;
   display: flex;
   flex-direction: column;
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
@@ -844,7 +934,7 @@ html, body, #app {
    ========================================================================== */
 #node-context-menu {
   position: fixed;
-  z-index: 250;
+  z-index: 900;
   background: var(--bg-sidebar);
   border: 1px solid var(--border-color);
   border-radius: 12px;

@@ -1404,13 +1404,18 @@ function updateTransform() {
 
 // Reliable Sidebar Open / Close Functions
 function openSidebar() {
+  if (aiChatPanel && !aiChatPanel.classList.contains('hidden')) {
+    aiChatPanel.classList.add('hidden');
+  }
   sidebar.classList.add('open');
-  drawerOverlay.classList.remove('hidden');
+  if (drawerOverlay) drawerOverlay.classList.remove('hidden');
 }
 
 function closeSidebar() {
   sidebar.classList.remove('open');
-  drawerOverlay.classList.add('hidden');
+  if (drawerOverlay && (!aiChatPanel || aiChatPanel.classList.contains('hidden'))) {
+    drawerOverlay.classList.add('hidden');
+  }
 }
 
 // Setup Event Listeners
@@ -1434,6 +1439,7 @@ function setupEventListeners() {
     drawerOverlay.addEventListener('click', (e) => {
       e.stopPropagation();
       closeSidebar();
+      closeAiPanel();
     });
   }
 
@@ -1446,6 +1452,8 @@ function setupEventListeners() {
         closeIoModal();
       } else if (sidebar.classList.contains('open')) {
         closeSidebar();
+      } else if (aiChatPanel && !aiChatPanel.classList.contains('hidden')) {
+        closeAiPanel();
       }
       return;
     }
@@ -1756,7 +1764,11 @@ function setupEventListeners() {
 // Gemini AI Panel Functions
 function openAiPanel() {
   if (!aiChatPanel) return;
+  if (sidebar && sidebar.classList.contains('open')) {
+    sidebar.classList.remove('open');
+  }
   aiChatPanel.classList.remove('hidden');
+  if (drawerOverlay) drawerOverlay.classList.remove('hidden');
   const savedKey = localStorage.getItem('gemini_api_key') || '';
   if (geminiApiKeyInput) geminiApiKeyInput.value = savedKey;
 }
@@ -1764,6 +1776,9 @@ function openAiPanel() {
 function closeAiPanel() {
   if (!aiChatPanel) return;
   aiChatPanel.classList.add('hidden');
+  if (drawerOverlay && (!sidebar || !sidebar.classList.contains('open'))) {
+    drawerOverlay.classList.add('hidden');
+  }
 }
 
 function addAiChatMessage(role, text) {
@@ -1786,7 +1801,7 @@ async function callGeminiApi(prompt) {
   const apiKey = getGeminiApiKey();
   if (!apiKey) return null;
 
-  const candidateModels = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest', 'gemini-3.6-flash'];
+  const candidateModels = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-flash-latest', 'gemini-3.6-flash'];
   for (const model of candidateModels) {
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
