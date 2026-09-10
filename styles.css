@@ -188,6 +188,19 @@ html, body, #app {
   border-left-width: 3.5px;
 }
 
+/* Defensive suppression for legacy drag bars */
+.card-drag-bar,
+.drag-bar-pill {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  visibility: hidden !important;
+}
+
 
 /* Text Box Body */
 .box-body {

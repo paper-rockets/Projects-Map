@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mindmap-classic-v38';
+const CACHE_NAME = 'mindmap-classic-v40';
 const ASSETS = [
   './',
   './index.html',
@@ -23,7 +23,7 @@ self.addEventListener('activate', (e) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME && (key.startsWith('mindmap-classic-') || key.startsWith('studio-mindmap-'))) {
+          if (key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })

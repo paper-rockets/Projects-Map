@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mindmap-weave-v38';
+const CACHE_NAME = 'mindmap-weave-v40';
 const ASSETS = [
   './',
   './index.html',
@@ -23,7 +23,7 @@ self.addEventListener('activate', (e) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME && (key.startsWith('mindmap-weave-') || key.startsWith('weave-orchestrator-'))) {
+          if (key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })
