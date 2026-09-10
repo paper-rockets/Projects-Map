@@ -1521,8 +1521,16 @@ async function callAiApi(prompt) {
 
   // 2. Client fallback for Gemini if on static host
   if (provider === 'gemini') {
-    const clientKey = (typeof window !== 'undefined' && window.LOCAL_GEMINI_KEY) || localStorage.getItem('gemini_api_key') || '';
-    if (!clientKey) return null;
+    let clientKey = (typeof window !== 'undefined' && window.LOCAL_GEMINI_KEY) || localStorage.getItem('gemini_api_key') || '';
+    if (!clientKey) {
+      const entered = window.prompt('To use AI in Weave on this device, enter your Google Gemini API Key once:\n(Saved privately on this device)');
+      if (entered && entered.trim()) {
+        clientKey = entered.trim();
+        localStorage.setItem('gemini_api_key', clientKey);
+      } else {
+        return null;
+      }
+    }
 
     const candidateModels = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
     for (const model of candidateModels) {

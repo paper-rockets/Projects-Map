@@ -1490,8 +1490,16 @@ async function callGeminiApi(prompt) {
   }
 
   // 2. Client fallback for static hosts (GitHub Pages)
-  const clientKey = (typeof window !== 'undefined' && window.LOCAL_GEMINI_KEY) || localStorage.getItem('gemini_api_key') || '';
-  if (!clientKey) return null;
+  let clientKey = (typeof window !== 'undefined' && window.LOCAL_GEMINI_KEY) || localStorage.getItem('gemini_api_key') || '';
+  if (!clientKey) {
+    const entered = window.prompt('To use AI on this device, enter your Google Gemini API Key once:\n(It will be safely saved in this device\'s browser storage only)');
+    if (entered && entered.trim()) {
+      clientKey = entered.trim();
+      localStorage.setItem('gemini_api_key', clientKey);
+    } else {
+      return null;
+    }
+  }
 
   const candidateModels = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
   for (const model of candidateModels) {
@@ -2677,6 +2685,19 @@ function setupEventListeners() {
         }
       } else {
         alert('To install Classic Mind Map:\n• On iPhone / iPad: Tap the Share button (square with arrow) → tap "Add to Home Screen".\n• On Android / Chrome: Tap the three dots (⋮) → tap "Install app" or "Add to Home screen".\n• On Computer: Click the Install icon in your browser address bar.');
+      }
+    });
+  }
+
+  const moreApiKeyBtn = document.getElementById('more-api-key-btn');
+  if (moreApiKeyBtn) {
+    moreApiKeyBtn.addEventListener('click', () => {
+      closeAllPopovers();
+      const current = localStorage.getItem('gemini_api_key') || (typeof window !== 'undefined' && window.LOCAL_GEMINI_KEY) || '';
+      const key = prompt('Google Gemini API Key (stored privately on this device):', current);
+      if (key !== null) {
+        localStorage.setItem('gemini_api_key', key.trim());
+        alert(key.trim() ? 'Gemini API key saved privately on this device.' : 'API key cleared.');
       }
     });
   }
