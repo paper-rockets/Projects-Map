@@ -272,6 +272,23 @@ svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .status-answered{background:var(--money-soft);color:var(--money)}
 .count{font:600 10.5px/1 var(--mono);color:var(--muted);background:var(--panel-2);border-radius:10px;padding:3px 6px}
 
+.method{display:flex;align-items:center;gap:4px;margin:8px 2px 4px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+.method span{font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;margin-right:4px}
+.method button{border:1px solid var(--line-2);background:transparent;border-radius:7px;padding:3px 8px;font-size:11px;font-weight:600;color:var(--text-2)}
+.method button.on{background:var(--gold-soft);border-color:var(--gold);color:var(--gold)}
+.method-note{font-size:11px;color:var(--faint);margin:2px 2px 8px;line-height:1.45}
+.stack{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;margin:4px 2px 8px;background:var(--panel)}
+.stack i{display:block;height:100%}
+.trace-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;gap:9px;align-items:center;padding:6px 2px;border-bottom:1px solid var(--line);font-size:12.5px}
+.trace-row i{width:10px;height:10px;border-radius:3px}
+.trace-row span:nth-child(2),.trace-row button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.trace-row button{border:0;background:none;padding:0;font-weight:600;color:var(--text);text-align:left}
+.trace-row button:hover{color:var(--gold)}
+.trace-row .mono{font-size:12px}
+.trace-row .still{color:var(--muted);font-size:11px}
+.trace-row .pct{font:500 11px var(--mono);color:var(--muted);min-width:34px;text-align:right}
+.accounted{font-size:11.5px;color:var(--question);margin:8px 2px 0}
+.accounted.ok{color:var(--money)}
 .dossier-hero{display:grid;grid-template-columns:62px 1fr;gap:14px;align-items:center;margin:2px 2px 12px}
 .dossier-hero .av{width:62px;height:62px;font-size:19px;box-shadow:inset 0 0 0 2px var(--c),0 0 0 6px var(--soft)}
 .dossier-hero .acard-ic{width:62px;height:62px;border-radius:16px}
@@ -1164,9 +1181,16 @@ function groupSVG(g) {
       <text class="row-num" x="${r.x + 12}" y="${r.y + 39}">${esc(clip(a.number || 'No number', 33))}</text>
       ${holderTxt ? `<text class="row-num" x="${r.x + 12}" y="${r.y + 55}" style="fill:var(--muted);font-family:var(--sans)">${esc(clip(holderTxt, 32))}</text>` :
         `<text class="row-in" x="${r.x + 12}" y="${r.y + 55}">IN ${inn ? money(inn, true) : '—'}</text><text class="row-out" x="${r.x + r.w - 10}" y="${r.y + 55}">OUT ${out ? money(out, true) : '—'}</text>`}
-      ${tagSvg}</g>`;
+      ${tagSvg}${compBar(a.id, r)}</g>`;
   });
   return s + '</g>';
+}
+function compBar(accId, r) {
+  const rec = A.trace?.received.get(accId); if (!rec || !rec.size) return '';
+  const entries = [...rec].sort((a, b) => (a[0] === 'other') - (b[0] === 'other') || b[1] - a[1]), total = entries.reduce((s, [, c]) => s + c, 0);
+  let x = r.x + 12, w = r.w - 24, out = `<title>${esc(entries.map(([s, c]) => `${srcName(s)} ${p2m(c)}`).join(' · '))}</title>`;
+  entries.forEach(([s, c]) => { const sw = w * c / total; out += `<rect class="comp" x="${x.toFixed(1)}" y="${r.y + r.h - 5}" width="${Math.max(0, sw - 1).toFixed(1)}" height="3" rx="1.5" fill="${s === 'other' ? tok('line-2') : victimColor(s)}"/>`; x += sw; });
+  return `<g class="compbar">${out}</g>`;
 }
 function chipSVG(n) {
   const r = geo.get(n.id), c = r.chip, q = n.kind === 'question';
@@ -1299,6 +1323,114 @@ let fitPending = true;
 function zoomAt(f, cx, cy) { const z = Math.min(2.4, Math.max(0.2, view.z * f)); view.x = cx - (cx - view.x) * (z / view.z); view.y = cy - (cy - view.y) * (z / view.z); view.z = z; applyView(); }
 
 /* =====================================================================
+   Traced amounts: how much of each victim's money went where.
+   Payments are replayed in date order in whole pennies, so every victim's
+   money is fully accounted for (still held somewhere, or returned).
+   Methods:
+   - 'prorata' (proportional): each payment out carries the same mix of
+     victims' money as the account held at that moment.
+   - 'fifo' (first in, first out): the money that arrived first leaves first.
+   Money leaving an account beyond what victims put in is "other funds"
+   (the holder's own or untraced money). Undated payments are left out.
+   ===================================================================== */
+const TRACE_METHODS = { prorata: 'Proportional', fifo: 'First in, first out' };
+const VIC_COLORS = ['#57b2ff', '#b58cff', '#3fd6d0', '#ffb45e', '#ff86b0', '#a8e063', '#7d9bff', '#f7d774'];
+function victimColor(id) { const vs = state.people.filter(p => p.role === 'victim'); const i = vs.findIndex(p => p.id === id); return i < 0 ? tok('faint') : VIC_COLORS[i % VIC_COLORS.length]; }
+function traceFunds(method) {
+  const own = A.ownerId, P = A.personById, add = (m, k, v) => m.set(k, (m.get(k) || 0) + v);
+  const victimOf = id => P.get(own.get(id))?.role === 'victim' ? own.get(id) : null;
+  const txs = state.transactions.map((t, i) => ({ t, i })).filter(x => x.t.date && A.accById.has(x.t.from) && A.accById.has(x.t.to) && x.t.from !== x.t.to && x.t.amount > 0)
+    .sort((a, b) => a.t.date.localeCompare(b.t.date) || a.i - b.i).map(x => x.t);
+  const undated = state.transactions.filter(t => !t.date && t.amount > 0).length;
+  const lots = new Map(), received = new Map(), perTx = new Map(), returned = new Map();
+  for (const t of txs) {
+    const amt = Math.round(t.amount * 100), vf = victimOf(t.from), vt = victimOf(t.to);
+    if (vf && vt === vf) continue;                       // moving between a victim's own accounts
+    const parts = new Map();
+    if (vf) parts.set(vf, amt);
+    else {
+      const pot = lots.get(t.from) || [], avail = pot.reduce((s, l) => s + l.c, 0), take = Math.min(amt, avail);
+      if (take > 0) {
+        if (method === 'fifo') { let need = take; while (need > 0 && pot.length) { const l = pot[0], k = Math.min(need, l.c); add(parts, l.src, k); l.c -= k; need -= k; if (!l.c) pot.shift(); } }
+        else {
+          const bySrc = new Map(); pot.forEach(l => add(bySrc, l.src, l.c));
+          const sh = [...bySrc].map(([s, c]) => { const exact = c * take / avail; return { s, exact, f: Math.floor(exact) }; });
+          let used = sh.reduce((s, x) => s + x.f, 0);
+          sh.sort((a, b) => (b.exact - b.f) - (a.exact - a.f));
+          for (let i = 0; used < take; i++, used++) sh[i % sh.length].f++;   // largest remainder: pennies always add up
+          sh.forEach(x => { if (!x.f) return; add(parts, x.s, x.f); let need = x.f; for (const l of pot) { if (l.src !== x.s || !need) continue; const k = Math.min(need, l.c); l.c -= k; need -= k; } });
+          lots.set(t.from, pot.filter(l => l.c > 0));
+        }
+      }
+      if (amt > take) add(parts, 'other', amt - take);
+    }
+    perTx.set(t.id, parts);
+    if (vt) { parts.forEach((c, s) => { if (s !== 'other') add(returned, s, c); }); continue; }   // money back into a victim's account
+    const dest = lots.get(t.to) || []; parts.forEach((c, s) => dest.push({ src: s, c })); lots.set(t.to, dest);
+    const r = received.get(t.to) || new Map(); parts.forEach((c, s) => add(r, s, c)); received.set(t.to, r);
+  }
+  const holding = new Map();
+  lots.forEach((pot, acc) => { const m = new Map(); pot.forEach(l => { if (l.c) add(m, l.src, l.c); }); if (m.size) holding.set(acc, m); });
+  const byVictim = new Map();   // victim -> { held: Map(acc -> pennies), returned, total }
+  holding.forEach((m, acc) => m.forEach((c, s) => { if (s === 'other') return; if (!byVictim.has(s)) byVictim.set(s, { held: new Map(), returned: 0 }); byVictim.get(s).held.set(acc, c); }));
+  returned.forEach((c, s) => { if (!byVictim.has(s)) byVictim.set(s, { held: new Map(), returned: 0 }); byVictim.get(s).returned = c; });
+  const datedLoss = new Map();
+  txs.forEach(t => { const vf = victimOf(t.from); if (vf && victimOf(t.to) !== vf) add(datedLoss, vf, Math.round(t.amount * 100)); });
+  return { method, received, holding, perTx, byVictim, datedLoss, undated };
+}
+const p2m = c => money(Math.round(c) / 100);
+function traceFindings() {
+  const T = A.trace, out = [];
+  const holds = [...T.holding].map(([acc, m]) => ({ acc, m, v: [...m].filter(([s]) => s !== 'other') })).filter(h => h.v.length)
+    .map(h => ({ ...h, total: h.v.reduce((s, [, c]) => s + c, 0) })).sort((a, b) => b.total - a.total);
+  holds.slice(0, 3).forEach((h, i) => {
+    const a = A.accById.get(h.acc), holder = A.ownerId.get(h.acc);
+    const edges = new Set(), nodes = new Set([h.acc]);
+    h.v.forEach(([vid]) => { nodes.add(vid); const tr = A.trails.get(vid); if (tr && tr.reached.includes(h.acc)) { const p = tr.pathTo(h.acc); p.ids.forEach(x => nodes.add(x)); p.es.forEach(x => edges.add(x)); } });
+    out.push({ sev: i === 0 ? 'high' : 'med', kind: 'Traced amounts',
+      title: `${p2m(h.total)} of victims' money last recorded in ${accLabel(a)}`,
+      text: `${h.v.sort((x, y) => y[1] - x[1]).map(([vid, c]) => `<b>${esc(A.personById.get(vid)?.name || '')}</b> <span class="mono">${p2m(c)}</span>`).join(', ')}. ${holder ? `Held by <b>${esc(A.personById.get(holder).name)}</b>.` : 'Holder not identified.'} Worked out with the ${TRACE_METHODS[T.method].toLowerCase()} method.`,
+      nodes: [...nodes], edges: [...edges], target: null });
+  });
+  return out;
+}
+function methodSwitch() {
+  const m = A.trace.method;
+  return `<div class="method"><span>Method</span>${Object.entries(TRACE_METHODS).map(([k, l]) => `<button type="button" class="${k === m ? 'on' : ''}" data-method="${k}">${l}</button>`).join('')}</div>
+    <p class="method-note">${m === 'fifo' ? 'The money that arrived first is treated as leaving first.' : 'Each payment out carries the same mix of victims’ money the account held at that moment.'}${A.trace.undated ? ` ${A.trace.undated} payment${A.trace.undated > 1 ? 's' : ''} without a date ${A.trace.undated > 1 ? 'are' : 'is'} not included.` : ''}</p>`;
+}
+function stackBar(entries, total) {
+  return `<div class="stack">${entries.map(([s, c]) => `<i style="width:${(c / total * 100).toFixed(2)}%;background:${s === 'other' ? 'var(--line-2)' : victimColor(s)}" title="${esc(s === 'other' ? 'Other funds' : A.personById.get(s)?.name || '')}: ${p2m(c)}"></i>`).join('')}</div>`;
+}
+function srcName(s) { return s === 'other' ? 'Other funds' : A.personById.get(s)?.name || 'Unknown'; }
+function tracedAccountHTML(accId) {
+  const rec = A.trace.received.get(accId), hold = A.trace.holding.get(accId) || new Map();
+  if (!rec || !rec.size) return '';
+  const entries = [...rec].sort((a, b) => (a[0] === 'other') - (b[0] === 'other') || b[1] - a[1]), total = entries.reduce((s, [, c]) => s + c, 0);
+  return `<div class="sub-h">Whose money came in</div>${methodSwitch()}${stackBar(entries, total)}
+    ${entries.map(([s, c]) => `<div class="trace-row"><i style="background:${s === 'other' ? 'var(--line-2)' : victimColor(s)}"></i><span>${esc(srcName(s))}</span><span class="mono">${p2m(c)}</span><span class="mono still">${hold.get(s) ? p2m(hold.get(s)) + ' still here' : 'moved on'}</span></div>`).join('')}`;
+}
+function tracedVictimHTML(vid) {
+  const b = A.trace.byVictim.get(vid), loss = A.trace.datedLoss.get(vid) || 0;
+  if (!b || !loss) return '';
+  const held = [...b.held].sort((x, y) => y[1] - x[1]), accounted = held.reduce((s, [, c]) => s + c, 0) + b.returned;
+  const ok = Math.abs(accounted - loss) < 1;
+  return `<div class="sub-h">Where the money is now</div>${methodSwitch()}
+    ${held.map(([acc, c]) => `<div class="trace-row"><i style="background:${victimColor(vid)}"></i><button type="button" data-goto="${acc}">${esc(accHolderName(acc) === accLabel(A.accById.get(acc)) ? accLabel(A.accById.get(acc)) : accHolderName(acc) + ' · ' + accLabel(A.accById.get(acc)))}</button><span class="mono">${p2m(c)}</span><span class="pct">${Math.round(c / loss * 100)}%</span></div>`).join('')}
+    ${b.returned ? `<div class="trace-row"><i style="background:var(--money)"></i><span>Returned to victim accounts</span><span class="mono">${p2m(b.returned)}</span><span class="pct">${Math.round(b.returned / loss * 100)}%</span></div>` : ''}
+    <p class="accounted ${ok ? 'ok' : ''}">${ok ? '✓ ' : ''}${p2m(accounted)} of ${p2m(loss)} accounted for${ok ? '' : ' (check undated payments)'}</p>`;
+}
+function tracedHolderHTML(pid) {
+  const accIds = state.accounts.filter(a => A.ownerId.get(a.id) === pid).map(a => a.id), add = (m, k, v) => m.set(k, (m.get(k) || 0) + v);
+  const rec = new Map(), hold = new Map();
+  accIds.forEach(id => { (A.trace.received.get(id) || new Map()).forEach((c, s) => add(rec, s, c)); (A.trace.holding.get(id) || new Map()).forEach((c, s) => add(hold, s, c)); });
+  if (!rec.size) return '';
+  const entries = [...rec].sort((a, b) => (a[0] === 'other') - (b[0] === 'other') || b[1] - a[1]), total = entries.reduce((s, [, c]) => s + c, 0);
+  return `<div class="sub-h">Victims' money received</div>${methodSwitch()}${stackBar(entries, total)}
+    ${entries.map(([s, c]) => `<div class="trace-row"><i style="background:${s === 'other' ? 'var(--line-2)' : victimColor(s)}"></i><span>${esc(srcName(s))}</span><span class="mono">${p2m(c)}</span><span class="mono still">${hold.get(s) ? p2m(hold.get(s)) + ' still held' : 'moved on'}</span></div>`).join('')}`;
+}
+
+/* =====================================================================
    Panels
    ===================================================================== */
 let leftTab = 'people', rightTab = 'findings', peopleFilter = '';
@@ -1419,6 +1551,7 @@ function dossierHTML() {
       <div class="tile"><b>${A.ownerId.get(r.id) ? esc(clip(personName(A.ownerId.get(r.id)), 16)) : '<span style="color:var(--question)">Unknown</span>'}</b><span>Holder</span></div><div class="tile"><b>${vs.length}</b><span>Victims traced here</span></div></div>
       <div class="d-actions"><button class="btn small" data-edit="${r.id}" type="button">Edit account</button><button class="btn small" data-ask="${r.id}" type="button">Ask a question</button></div>
       ${vs.length ? `<div class="sub-h">Money traced from</div>${vs.map(v => `<div class="conn"><i style="--c:var(--victim)"></i><div><button type="button" data-goto="${v}">${esc(personName(v))}</button><small>${esc(A.trails.get(v).pathTo(r.id).ids.map(id => accHolderName(id)).join(' → '))}</small></div></div>`).join('')}` : ''}
+      ${tracedAccountHTML(r.id)}
       <div class="sub-h">Payments · ${pays.length}</div>${pays.map(x => `<div class="conn"><i style="--c:${x.to === r.id ? 'var(--money)' : 'var(--fraud)'}"></i><div style="flex:1"><button type="button" data-goto="${x.id}">${x.to === r.id ? 'From ' + esc(accHolderName(x.from)) : 'To ' + esc(accHolderName(x.to))}</button><small>${fmtDate(x.date)}${x.reference ? ' · Ref ' + esc(x.reference) : ''}</small></div><span class="mono" style="color:${x.to === r.id ? 'var(--money)' : 'var(--fraud)'}">${x.to === r.id ? '+' : '−'}${money(x.amount)}</span></div>`).join('') || '<p class="empty-note">No payments recorded.</p>'}
       <div class="sub-h">Other links</div>${linksHTML([r.id])}`;
   }
@@ -1443,6 +1576,7 @@ function dossierHTML() {
     <div class="tiles">${tiles.map(([v, l, c]) => `<div class="tile"><b ${c ? `style="color:${c}"` : ''}>${v}</b><span>${l}</span></div>`).join('')}</div>
     <div class="d-actions"><button class="btn small primary" type="button" data-act="replay">Replay trail</button><button class="btn small" data-edit="${r.id}" type="button">Edit</button><button class="btn small" data-add-acc="${r.id}" type="button">+ Account</button><button class="btn small" data-ask="${r.id}" type="button">Ask a question</button></div>
     ${r.notes ? `<p style="font-size:12.5px;color:var(--text-2);margin:12px 2px 0;line-height:1.55">${esc(r.notes)}</p>` : ''}
+    ${r.role === 'victim' ? tracedVictimHTML(r.id) : tracedHolderHTML(r.id)}
     ${accs.length ? `<div class="sub-h">Accounts</div>${accs.map(a => `<div class="conn"><i style="--c:var(--account)"></i><div><button type="button" data-goto="${a.id}">${esc(accLabel(a))}</button><small class="mono">${esc(a.number || '')}</small></div></div>`).join('')}` : ''}
     ${trail}<div class="sub-h">Links &amp; reasons</div>${linksHTML([r.id, ...accIds])}`;
 }
@@ -1476,6 +1610,11 @@ document.addEventListener('click', e => {
 });
 function renderAllUnsafe() {
   A = analyse();
+  A.trace = traceFunds(state.meta.tracing === 'fifo' ? 'fifo' : 'prorata');
+  A.findings.push(...traceFindings());
+  const order = { high: 0, med: 1, info: 2 }, kindOrder = k => k === 'Common destination' ? 0 : k === 'Traced amounts' ? 1 : 2;
+  A.findings.sort((a, b) => order[a.sev] - order[b.sev] || kindOrder(a.kind) - kindOrder(b.kind));
+  A.findings.forEach((f, i) => f.id = 'f' + i);
   if (focusFinding && !A.findings.some(f => f.id === focusFinding)) focusFinding = null;
   if (sel && !sel.startsWith('edge:') && !A.nodeMap.has(sel) && !state.transactions.some(t => t.id === sel)) sel = null;
   renderKpis(); renderLeft(); renderRight(); renderMap(); renderTimeline();
@@ -1753,7 +1892,9 @@ function victimStory(v) {
   const facts = [];
   if (pays.length) facts.push(`${pays.length} payment${pays.length > 1 ? 's' : ''}${pays[0].date ? `, ${fmtDate(pays[0].date)} to ${fmtDate(pays[pays.length - 1].date)}` : ''}`);
   if (holders.length) facts.push(`Money reached ${holders.map(p => p.name).join(', ')}`);
-  if (ends.length) facts.push(`Last seen in ${ends.map(id => accLabel(A.accById.get(id))).join(', ')}`);
+  const top = A.trace && [...(A.trace.byVictim.get(v.id)?.held || [])].sort((a, b) => b[1] - a[1])[0];
+  if (top) facts.push(`${p2m(top[1])} traced to ${accLabel(A.accById.get(top[0]))}`);
+  else if (ends.length) facts.push(`Last seen in ${ends.map(id => accLabel(A.accById.get(id))).join(', ')}`);
   const hs = trailFor(v.id);
   const frame = [...hs.n].filter(id => { const k = A.nodeMap.get(id)?.kind; return k !== 'note' && k !== 'question'; });
   return { v, loss: A.lossBy.get(v.id) || 0, facts, hs, frame, reachedCount: reached.length };
@@ -2057,8 +2198,9 @@ function editSettings() {
   openDialog('Case details', `${f('f-title', 'Case title', state.meta.title)}
     <div class="grid2">${f('f-ref2', 'Case reference', state.meta.ref, { mono: true })}
     <div class="field"><label for="f-cur">Currency</label><select class="input" id="f-cur">${cur.map(c => `<option ${c === state.meta.currency ? 'selected' : ''}>${c}</option>`).join('')}</select></div></div>
-    ${f('f-analyst', 'Analyst', state.meta.analyst, { ph: 'Your name' })}`,
-    () => { Object.assign(state.meta, { title: val('f-title'), ref: val('f-ref2'), currency: $('#f-cur').value, analyst: val('f-analyst') }); });
+    ${f('f-analyst', 'Analyst', state.meta.analyst, { ph: 'Your name' })}
+    <div class="field"><label for="f-trace">Tracing method for amounts</label><select class="input" id="f-trace"><option value="prorata" ${state.meta.tracing !== 'fifo' ? 'selected' : ''}>Proportional: each payment out carries the account's current mix</option><option value="fifo" ${state.meta.tracing === 'fifo' ? 'selected' : ''}>First in, first out: earliest money leaves first</option></select></div>`,
+    () => { Object.assign(state.meta, { title: val('f-title'), ref: val('f-ref2'), currency: $('#f-cur').value, analyst: val('f-analyst'), tracing: $('#f-trace').value }); });
 }
 function openEditorFor(id) {
   const p = state.people.find(x => x.id === id); if (p) return editPerson(p);
@@ -2265,6 +2407,7 @@ $('#left-body').addEventListener('click', e => {
 $('#left-body').addEventListener('dblclick', e => { const p = e.target.closest('[data-pick]'); if (p) openEditorFor(p.dataset.pick); });
 $('#rtabs').addEventListener('click', e => { const t = e.target.closest('[data-rtab]'); if (t) { rightTab = t.dataset.rtab; renderRight(); } });
 function onRailAction(e) {
+  const mt = e.target.closest('[data-method]'); if (mt) { state.meta.tracing = mt.dataset.method; save(); renderAll(); toast('Traced amounts: ' + TRACE_METHODS[mt.dataset.method].toLowerCase() + ' method'); return; }
   const f = e.target.closest('[data-finding]');
   if (f) { focusFinding = focusFinding === f.dataset.finding ? null : f.dataset.finding; sel = null; applyState(); renderRight(); if (focusFinding) { flyToIds(A.findings.find(x => x.id === focusFinding).nodes); if (matchMedia('(max-width:900px)').matches) closeDrawers(); } else fit(); return; }
   const ed = e.target.closest('[data-edit]'); if (ed) return openEditorFor(ed.dataset.edit);
