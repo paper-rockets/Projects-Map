@@ -415,6 +415,8 @@ textarea.input{min-height:76px;resize:vertical;line-height:1.5}
 .p-dots button.on{background:var(--gold);width:24px;border-radius:4px}
 .p-count{font:500 12px var(--mono);color:var(--muted);min-width:60px}
 
+.recovery{position:absolute;z-index:8;left:50%;top:64px;transform:translateX(-50%);display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 14px;max-width:min(680px,calc(100% - 28px));border-color:var(--fraud)!important;font-size:13px}
+.recovery span{color:var(--muted)} .recovery small{flex-basis:100%;color:var(--faint);font-size:11px}
 .scrim{position:fixed;inset:0;z-index:15;background:rgba(3,7,16,.5)}
 .mobile-bar{display:none}
 @media (max-width:1720px){ .kpi.m{display:none} }
@@ -571,7 +573,8 @@ function parseAmount(v) {
   const m = s.match(/-?\d+(\.\d+)?/);
   return m ? Math.round(parseFloat(m[0]) * mult * 100) / 100 : 0;
 }
-function parseDate(v) {
+function parseDate(v) { const r = parseDateRaw(v); return r && +r.slice(5, 7) >= 1 && +r.slice(5, 7) <= 12 && !isNaN(Date.parse(r)) && new Date(r).toISOString().slice(0, 10) === r ? r : ''; }
+function parseDateRaw(v) {
   const s = String(v ?? '').trim();
   if (!s) return '';
   let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
@@ -657,7 +660,17 @@ function sanitize(c) {
   for (const k of ['people', 'accounts', 'transactions', 'notes', 'questions']) base[k] = Array.isArray(c[k]) ? c[k].filter(x => x && typeof x === 'object').map(x => ({ ...x, id: x.id || uid(k[0]) })) : [];
   base.meta = { ...base.meta, ...(c.meta || {}) };
   base.pos = c.pos && typeof c.pos === 'object' ? c.pos : {};
-  base.transactions.forEach(t => { t.amount = parseAmount(t.amount); t.date = parseDate(t.date) || ''; });
+  base.transactions.forEach(t => { t.amount = parseAmount(t.amount); if (!isFinite(t.amount)) t.amount = 0; t.date = parseDate(t.date) || ''; ['from', 'to', 'method', 'reference', 'notes'].forEach(k => t[k] = t[k] == null ? '' : String(t[k])); });
+  const fin = v => typeof v === 'number' && isFinite(v);
+  base.pos = Object.fromEntries(Object.entries(base.pos).filter(([, v]) => v && fin(v.x) && fin(v.y)));
+  base.people.forEach(p => { p.name = String(p.name ?? '').trim() || 'Unnamed person'; if (!ROLE[p.role]) p.role = 'other'; ['aliases', 'phone', 'email', 'notes'].forEach(k => p[k] = p[k] == null ? '' : String(p[k])); });
+  base.accounts.forEach(a => { if (!ACC_TYPE[a.type]) a.type = 'bank'; ['holder', 'institution', 'number', 'notes'].forEach(k => a[k] = a[k] == null ? '' : String(a[k])); });
+  base.notes.forEach(n => { n.text = String(n.text ?? ''); n.date = parseDate(n.date) || ''; });
+  base.questions.forEach(q => { q.text = String(q.text ?? ''); q.status = q.status === 'answered' ? 'answered' : 'open'; q.answer = String(q.answer ?? ''); });
+  ['title', 'ref', 'analyst'].forEach(k => base.meta[k] = base.meta[k] == null ? '' : String(base.meta[k]));
+  try { new Intl.NumberFormat(undefined, { style: 'currency', currency: base.meta.currency }); } catch (_) { base.meta.currency = 'GBP'; }
+  const seen = new Set();
+  ['people', 'accounts', 'transactions', 'notes', 'questions'].forEach(k => base[k].forEach(x => { if (seen.has(x.id)) x.id = uid(k[0]); seen.add(x.id); }));
   return base;
 }
 let toastT;
@@ -1443,6 +1456,25 @@ function select(id, { fly = true, tab = 'dossier' } = {}) {
 function clearSel() { sel = null; focusFinding = null; applyState(); renderRight(); renderLeft(); }
 
 function renderAll() {
+  try { renderAllUnsafe(); hideRecovery(); }
+  catch (e) { console.error(e); showRecovery(e); }
+}
+function showRecovery(e) {
+  let bar = $('#recovery');
+  if (!bar) { bar = document.createElement('div'); bar.id = 'recovery'; bar.className = 'recovery glass'; $('#main').appendChild(bar); }
+  bar.innerHTML = `<b>Part of this case couldn't be drawn.</b><span>Your data is still saved. Try tidying the layout first.</span>
+    <button class="btn small primary" type="button" data-fix="tidy">Tidy layout</button><button class="btn small" type="button" data-fix="backup">Save a backup copy</button><button class="btn small" type="button" data-fix="example">Open the example case</button>
+    <small class="mono">${esc(String(e && e.message || e)).slice(0, 160)}</small>`;
+  bar.hidden = false;
+}
+function hideRecovery() { const b = $('#recovery'); if (b) b.hidden = true; }
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-fix]'); if (!b) return;
+  if (b.dataset.fix === 'tidy') { state.pos = {}; save(); fitPending = true; renderAll(); }
+  if (b.dataset.fix === 'backup') exportJSON();
+  if (b.dataset.fix === 'example') addCase(exampleCase(), 'Example case added');
+});
+function renderAllUnsafe() {
   A = analyse();
   if (focusFinding && !A.findings.some(f => f.id === focusFinding)) focusFinding = null;
   if (sel && !sel.startsWith('edge:') && !A.nodeMap.has(sel) && !state.transactions.some(t => t.id === sel)) sel = null;
@@ -2293,6 +2325,7 @@ document.addEventListener('keydown', e => {
 let rsT; addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { renderTimeline(); }, 120); });
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && !$('#present').hidden) { /* stay in presenter; Esc handles exit */ } });
 
+addEventListener('error', e => { if (String(e.message || '').includes('ResizeObserver')) return; toast('Something went wrong. Your data is still saved on this device.'); });
 applyView();
 renderAll();
 })();
