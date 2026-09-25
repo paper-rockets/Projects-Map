@@ -188,9 +188,18 @@ svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .edge{fill:none;transition:opacity .25s,stroke-width .2s}
 .edge.money{stroke:var(--money);stroke-opacity:.55;stroke-linecap:round}
 .edge.money.hl{stroke-opacity:.95}
-.edge.shared{stroke:var(--shared);stroke-width:1.6;stroke-dasharray:6 5;opacity:.8}
-.edge.mention{stroke:var(--note);stroke-width:1.3;stroke-dasharray:1.5 5;stroke-linecap:round;opacity:.35}
+.edge.reported{opacity:.72}
+.edge.suspected{opacity:.34;stroke-dasharray:7 7}
+.edge.suspected.hl{opacity:.72}
+.elab.suspected{opacity:.62}
+.edge-question{fill:var(--question);font:700 15px var(--sans);text-anchor:middle;pointer-events:none}
+.source-tag{fill:var(--question);font:700 8px var(--sans);letter-spacing:.04em}
+.edge.shared{stroke:var(--shared);stroke-width:1.6;opacity:.8}
+.edge.mention{stroke:var(--note);stroke-width:1.3;stroke-linecap:round;opacity:.35}
 .edge.mention.q{stroke:var(--question)}
+.edge.shared.reported{opacity:.55}.edge.mention.reported{opacity:.22}
+.edge.shared.suspected,.edge.mention.suspected{stroke-dasharray:8 7;opacity:.34}
+.dim .edge-question:not(.hl){opacity:.04}
 .hit{fill:none;stroke:transparent;stroke-width:16;cursor:pointer;pointer-events:stroke}
 .pt{fill:var(--money)}
 :root[data-look="light"] .pt{fill:#06744f}
@@ -313,6 +322,9 @@ svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .conn small{display:block;color:var(--muted);font-size:11.5px;line-height:1.45}
 .conn button{border:0;background:none;padding:0;font-weight:600;color:var(--text);text-align:left}
 .conn button:hover{color:var(--gold)}
+.evidence{margin:12px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-size:12px}
+.evidence .sub-h{margin:0 0 6px}.evidence-row{display:flex;justify-content:space-between;gap:8px;padding:4px 0;color:var(--text-2)}
+.evidence-row small{color:var(--muted);text-align:right}.evidence-row.unsourced{color:var(--question)}
 .kv{display:grid;grid-template-columns:92px 1fr;gap:5px 10px;font-size:12.5px;margin:12px 2px}
 .kv dt{color:var(--muted)} .kv dd{margin:0;overflow-wrap:anywhere}
 
@@ -400,6 +412,8 @@ textarea.input{min-height:76px;resize:vertical;line-height:1.5}
 .s-facts li::before{content:"";position:absolute;left:0;top:.55em;width:8px;height:8px;border-radius:50%;background:var(--gold)}
 .s-cap{font-size:clamp(14px,1.3vw,18px);color:var(--muted);max-width:90ch;margin:10px 0 0;line-height:1.5}
 .s-cap b{color:inherit}
+.s-evidence{font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.35}
+.s-legend{font-size:11px;color:var(--faint);margin-top:5px}
 .s-graphic{flex:1;min-height:0;display:flex;align-items:center;margin-top:18px}
 .s-graphic svg{width:100%;height:100%;max-height:100%}
 .slide.on .tlg-line{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 2.4s cubic-bezier(.4,0,.2,1) .3s forwards}
@@ -452,6 +466,9 @@ textarea.input{min-height:76px;resize:vertical;line-height:1.5}
   .cs-title{font-size:18px}
   .f-tl{right:14px}
   .chips{overflow-x:auto;scrollbar-width:none;max-width:calc(100vw - 28px)}
+  .p-bar{display:grid;grid-template-columns:auto auto auto auto;justify-content:space-between;gap:6px;padding:8px}
+  .p-dots{display:none}
+  #p-pptx{grid-column:1/-1;grid-row:2}
   .f-tr{top:60px}
   .tl-ctrl{min-width:0;padding:0 10px}
   .tl-ctrl .tl-sub,.tl-ctrl .tl-loss{display:none}
@@ -506,8 +523,9 @@ textarea.input{min-height:76px;resize:vertical;line-height:1.5}
     <div class="float f-tl">
       <div class="glass chips" id="chips">
         <button type="button" class="chip" data-layer="money" aria-pressed="true" style="--c:var(--money)"><i></i>Money</button>
-        <button type="button" class="chip" data-layer="shared" aria-pressed="true" style="--c:var(--shared)"><i class="dash"></i>Shared details</button>
-        <button type="button" class="chip" data-layer="mention" aria-pressed="true" style="--c:var(--note)"><i class="dot"></i>Notes &amp; questions</button>
+        <button type="button" class="chip" data-layer="confirmed" aria-pressed="false" style="--c:var(--gold)"><i></i>Confirmed only</button>
+        <button type="button" class="chip" data-layer="shared" aria-pressed="true" style="--c:var(--shared)"><i></i>Shared details</button>
+        <button type="button" class="chip" data-layer="mention" aria-pressed="true" style="--c:var(--note)"><i></i>Notes &amp; questions</button>
         <button type="button" class="chip" data-layer="flow" aria-pressed="true" style="--c:var(--money)"><svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>Moving money</button>
       </div>
     </div>
@@ -625,7 +643,7 @@ const ROLE = { victim: 'Victim', suspect: 'Alleged fraudster', other: 'Other par
 const ACC_TYPE = { bank: 'Bank account', business: 'Business account', card: 'Card', payment: 'Payment app / e-money', crypto: 'Crypto wallet', other: 'Other' };
 
 function exampleCase() {
-  return {
+  const sample = {
     meta: { title: 'Veltrix Capital investment scam', ref: 'CASE-2026-0147', currency: 'GBP', analyst: '' },
     people: [
       { id: 'p1', role: 'victim', name: 'Margaret Holloway', aliases: '', phone: '07700 900412', email: '', notes: 'Met “David” on a dating app in Nov 2025. Persuaded to invest in a crypto trading platform called Veltrix Capital.' },
@@ -667,6 +685,21 @@ function exampleCase() {
     ],
     pos: {}
   };
+  const sources = {
+    p1: 'Margaret Holloway statement, 12 Jan', p2: 'Daniel Osei statement, 8 Jan', p3: 'Priya Nair statement, 22 Jan',
+    s1: 'Victim statements, 12 and 22 Jan', s2: 'Kestrel invoices and Companies House', o1: 'Monzo confirmation of payee, 9 Jan',
+    a1: 'Barclays statement p.3', a2: 'HSBC statement p.2', a3: 'Nationwide statement p.4',
+    a4: 'Metro Bank statement pp.1–3', a5: 'Monzo statement pp.2–4', a7: 'WhatsApp message, 22 Jan',
+    t1: 'Barclays statement p.3', t2: 'Barclays statement p.4', t3: 'Metro Bank statement p.2',
+    t4: 'HSBC statement p.2', t5: 'Monzo statement p.3', t6: 'Nationwide statement p.4',
+    t7: 'Metro Bank statement p.3', t8: 'Revolut transaction record, 22 Jan', t9: 'Barclays statement p.5',
+    n1: 'Monzo confirmation of payee, 9 Jan', n3: 'Daniel and Priya statements', q3: 'Companies House filing history'
+  };
+  for (const k of ['people', 'accounts', 'transactions', 'notes', 'questions']) sample[k].forEach(r => {
+    r.source = sources[r.id] || '';
+    r.confidence = r.id === 'a6' || r.id === 't5' ? 'suspected' : r.source ? 'confirmed' : 'reported';
+  });
+  return sample;
 }
 function emptyCase() {
   return { meta: { title: 'Untitled case', ref: 'CASE-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000), currency: 'GBP', analyst: '' }, people: [], accounts: [], transactions: [], notes: [], questions: [], pos: {} };
@@ -684,6 +717,10 @@ function sanitize(c) {
   base.accounts.forEach(a => { if (!ACC_TYPE[a.type]) a.type = 'bank'; ['holder', 'institution', 'number', 'notes'].forEach(k => a[k] = a[k] == null ? '' : String(a[k])); });
   base.notes.forEach(n => { n.text = String(n.text ?? ''); n.date = parseDate(n.date) || ''; });
   base.questions.forEach(q => { q.text = String(q.text ?? ''); q.status = q.status === 'answered' ? 'answered' : 'open'; q.answer = String(q.answer ?? ''); });
+  for (const k of ['people', 'accounts', 'transactions', 'notes', 'questions']) base[k].forEach(r => {
+    r.source = String(r.source ?? '').trim();
+    r.confidence = ['confirmed', 'reported', 'suspected'].includes(r.confidence) ? r.confidence : 'reported';
+  });
   ['title', 'ref', 'analyst'].forEach(k => base.meta[k] = base.meta[k] == null ? '' : String(base.meta[k]));
   try { new Intl.NumberFormat(undefined, { style: 'currency', currency: base.meta.currency }); } catch (_) { base.meta.currency = 'GBP'; }
   const seen = new Set();
@@ -735,6 +772,17 @@ const ICON = {
 const accIcon = (t, cls = 'i') => `<svg class="${cls}" viewBox="0 0 24 24"><path d="${ICON[t] || ICON.other}"/></svg>`;
 const accCard = a => `<span class="acard-ic r-account">${accIcon(a.type)}</span>`;
 const plain = html => String(html).replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+const confidenceName = c => ({ confirmed: 'Confirmed', reported: 'Reported', suspected: 'Suspected' })[c] || 'Reported';
+const weaker = records => ['suspected', 'reported', 'confirmed'].find(c => records.some(r => (r?.confidence || 'reported') === c)) || 'reported';
+const sourceName = r => r?.source?.trim() || 'No source';
+const evidenceRecordName = r => 'amount' in r ? `Payment ${fmtDate(r.date)} · ${money(r.amount)}` : 'institution' in r ? accLabel(r) : 'role' in r ? r.name : 'answer' in r ? 'Question answer' : 'Note';
+function factRecords() { return [...state.people, ...state.accounts, ...state.transactions, ...state.notes, ...state.questions.filter(q => q.status === 'answered' && q.answer.trim())]; }
+function evidenceCoverage() { const all = factRecords(), sourced = all.filter(r => String(r.source || '').trim()).length; return { all, sourced, missing: all.filter(r => !String(r.source || '').trim()), percent: all.length ? Math.round(sourced / all.length * 100) : 0 }; }
+function evidenceHTML(records) {
+  const unique = [...new Map(records.filter(Boolean).map(r => [r.id, r])).values()];
+  if (!unique.length) return '';
+  return `<section class="evidence"><div class="sub-h">Evidence</div>${unique.map(r => `<div class="evidence-row ${r.source ? '' : 'unsourced'}"><span><b>${esc(evidenceRecordName(r))}</b><br>${esc(sourceName(r))}</span><small>${confidenceName(r.confidence)}</small></div>`).join('')}</section>`;
+}
 const clip = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s; };
 function wrapText(text, maxChars, maxLines) {
   const words = String(text || '').split(/\s+/), lines = [];
@@ -777,7 +825,16 @@ function analyse() {
   const nodes = [], edges = [], findings = [], suggested = [];
   const nodeMap = new Map();
   const addNode = (id, kind, ref) => { const n = { id, kind, ref }; nodes.push(n); nodeMap.set(id, n); return n; };
-  const addEdge = e => { e.id = 'e' + edges.length; edges.push(e); return e; };
+  const recordOf = id => [...S.people, ...S.accounts, ...S.notes, ...S.questions].find(r => r.id === id);
+  const addEdge = e => {
+    e.id = 'e' + edges.length;
+    e.records = e.records || e.txs || [recordOf(e.from), recordOf(e.to)].filter(Boolean);
+    e.confidence = weaker(e.records);
+    e.sources = [...new Set(e.records.map(sourceName))];
+    const namedSources = e.records.map(r => `${'from' in r ? 'Payment ' + fmtDate(r.date) : nameOf(r.id)}: ${sourceName(r)}`).join('; ');
+    e.why = `${e.automatic ? 'Found automatically. ' : ''}${e.why} Source: ${namedSources || 'No source'}.`;
+    edges.push(e); return e;
+  };
   const nameOf = id => { if (personById.has(id)) return personById.get(id).name; if (accById.has(id)) return accLabel(accById.get(id)); const n = S.notes.find(x => x.id === id); if (n) return 'Note' + (n.date ? ' of ' + fmtDate(n.date) : ''); const q = S.questions.find(x => x.id === id); if (q) return 'Question: ' + clip(q.text, 48); return 'Unknown'; };
 
   people.forEach(p => addNode(p.id, ROLE[p.role] ? p.role : 'other', p));
@@ -793,7 +850,7 @@ function analyse() {
   const ownerId = new Map();
   accounts.forEach(a => {
     const p = nameIdx.get(normName(a.holder));
-    if (p) { ownerId.set(a.id, p.id); addEdge({ type: 'owns', from: p.id, to: a.id, why: `${p.name} is named as the holder of this account.` }); }
+    if (p) { ownerId.set(a.id, p.id); addEdge({ type: 'owns', from: p.id, to: a.id, automatic: true, records: [a], why: `${p.name} is named as the holder of this account.` }); }
   });
   const roleOfAcc = id => personById.get(ownerId.get(id))?.role || (accById.get(id)?.holder ? 'named' : 'unknown');
 
@@ -867,7 +924,7 @@ function analyse() {
     const made = [];
     ids.forEach(id => {
       if (id === hub) return;
-      made.push(addEdge({ type: 'shared', from: hub, to: id, label: 'Same ' + rec.type, sub: rec.label,
+      made.push(addEdge({ type: 'shared', from: hub, to: id, automatic: true, label: 'Same ' + rec.type, sub: rec.label,
         why: `The ${TYPE_WORD[rec.type]} ${rec.label} appears in both records.` }));
     });
     const victims = ids.filter(id => personById.get(id)?.role === 'victim');
@@ -887,7 +944,7 @@ function analyse() {
     findNames(text).forEach(other => {
       if (other === id || ownerId.get(id) === other) return;
       const k = [id, other].sort().join('|'); if (refPairs.has(k)) return; refPairs.add(k);
-      addEdge({ type: 'shared', from: other, to: id, label: 'Named in notes', sub: '', why: `${nameOf(other)} is named in the notes on ${nameOf(id)}.` });
+      addEdge({ type: 'shared', from: other, to: id, automatic: true, label: 'Named in notes', sub: '', why: `${nameOf(other)} is named in the notes on ${nameOf(id)}.` });
     });
   });
 
@@ -915,11 +972,11 @@ function analyse() {
   }
   S.notes.forEach(n => {
     addNode(n.id, 'note', n);
-    mentions(n.text).forEach((why, id) => addEdge({ type: 'mention', from: n.id, to: id, why: `This note ${why}.` }));
+    mentions(n.text).forEach((why, id) => addEdge({ type: 'mention', from: n.id, to: id, automatic: true, why: `This note ${why}.` }));
   });
   S.questions.forEach(q => {
     addNode(q.id, 'question', q);
-    mentions(q.text + ' ' + (q.answer || '')).forEach((why, id) => addEdge({ type: 'mention', q: true, from: q.id, to: id, why: `This question ${why}.` }));
+    mentions(q.text + ' ' + (q.answer || '')).forEach((why, id) => addEdge({ type: 'mention', q: true, from: q.id, to: id, automatic: true, why: `This question ${why}.` }));
   });
 
   // ---- Money trail: follow payments forward in date order from each victim
@@ -1043,7 +1100,7 @@ function analyse() {
 const GW = 268, PAD = 9, HEAD = 58, ROW = 64, RGAP = 6, COL_W = 390, G_GAP = 28, CHIP_W = 236;
 let A = null, geo = new Map(), groups = [], layoutBounds = null;
 let view = { x: 0, y: 0, z: 1 };
-let layers = { money: true, shared: true, mention: true, flow: true };
+let layers = { money: true, shared: true, mention: true, flow: true, confirmed: false };
 let sel = null;          // selected entity id
 let focusFinding = null; // finding id
 let tlT = null;          // timeline playhead (ISO date) or null for all
@@ -1165,13 +1222,13 @@ function groupSVG(g) {
       <circle class="hd-av" cx="${cx}" cy="${cy}" r="21"/><text class="hd-ini" x="${cx}" y="${cy + 1}">${esc(initials(p.name))}</text>
       <text class="hd-name" x="${cx + 33}" y="${cy - 3}">${esc(clip(p.name, loss ? 17 : 23))}</text>
       <text class="hd-role" x="${cx + 33}" y="${cy + 14}">${ROLE_WORD[role] || 'Person'}${qn ? ` · ${qn} note${qn > 1 ? 's' : ''}` : ''}</text>
-      ${loss ? `<text class="hd-lossl" x="${g.x + GW - PAD - 6}" y="${cy - 6}">LOST</text><text class="hd-loss" x="${g.x + GW - PAD - 6}" y="${cy + 10}">${money(loss, true)}</text>` : ''}</g>`;
+       ${loss ? `<text class="hd-lossl" x="${g.x + GW - PAD - 6}" y="${cy - 6}">LOST</text><text class="hd-loss" x="${g.x + GW - PAD - 6}" y="${cy + 10}">${money(loss, true)}</text>` : ''}${recordTags(p, g.x + GW - 8, g.y + 12)}</g>`;
   }
   g.accs.forEach(a => {
     const r = geo.get(a.id), inn = A.inflow.get(a.id) || 0, out = A.outflow.get(a.id) || 0;
     const meet = A.findings.some(f => f.target === a.id);
     const qn = A.edges.filter(e => e.type === 'mention' && e.q && e.to === a.id).length;
-    const tags = []; if (meet) tags.push(['hot', 'VICTIMS MEET']); if (qn) tags.push(['q', '? ' + qn]);
+    const tags = []; if (!a.source) tags.push(['q', 'NO SOURCE']); if (a.confidence === 'suspected') tags.push(['q', 'SUSPECTED']); if (meet) tags.push(['hot', 'VICTIMS MEET']); if (qn) tags.push(['q', '? ' + qn]);
     let tx = r.x + r.w - 8, tagSvg = '';
     tags.forEach(([k, t]) => { const w = t.length * 5.6 + 10; tx -= w; tagSvg += `<rect class="tagbg-${k}" x="${tx}" y="${r.y + 8}" width="${w}" height="15" rx="4"/><text class="row-tag tag-${k}" x="${tx + 5}" y="${r.y + 18.5}">${t}</text>`; tx -= 4; });
     const holderTxt = g.person ? '' : (a.holder ? `Holder: ${a.holder}` : 'Holder unknown');
@@ -1185,6 +1242,10 @@ function groupSVG(g) {
   });
   return s + '</g>';
 }
+function recordTags(r, x, y) {
+  const labels = [!r.source && 'NO SOURCE', r.confidence === 'suspected' && 'SUSPECTED'].filter(Boolean);
+  return labels.map((label, i) => `<text class="source-tag" x="${x}" y="${y + i * 10}" text-anchor="end">${label}</text>`).join('');
+}
 function compBar(accId, r) {
   const rec = A.trace?.received.get(accId); if (!rec || !rec.size) return '';
   const entries = [...rec].sort((a, b) => (a[0] === 'other') - (b[0] === 'other') || b[1] - a[1]), total = entries.reduce((s, [, c]) => s + c, 0);
@@ -1196,7 +1257,7 @@ function chipSVG(n) {
   const r = geo.get(n.id), c = r.chip, q = n.kind === 'question';
   const k = q ? (n.ref.status === 'answered' ? 'ANSWERED' : 'OPEN QUESTION') : ('NOTE' + (n.ref.date ? ' · ' + fmtDate(n.ref.date).toUpperCase() : ''));
   return `<g class="nchip ${q ? 'q' : ''} ${q && n.ref.status === 'answered' ? 'done' : ''}" data-id="${n.id}"><title>${esc(n.ref.text)}</title><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="12"/>
-    <text class="nk" x="${r.x + 12}" y="${r.y + 19}">${esc(k)}</text>${c.lines.map((l, i) => `<text class="nt" x="${r.x + 12}" y="${r.y + 38 + i * 16}">${esc(l)}</text>`).join('')}</g>`;
+    <text class="nk" x="${r.x + 12}" y="${r.y + 19}">${esc(k)}</text>${(!q || n.ref.status === 'answered') ? recordTags(n.ref, r.x + r.w - 10, r.y + 19) : ''}${c.lines.map((l, i) => `<text class="nt" x="${r.x + 12}" y="${r.y + 38 + i * 16}">${esc(l)}</text>`).join('')}</g>`;
 }
 let maxFlow = 1;
 function renderMap() {
@@ -1213,14 +1274,14 @@ function drawEdges() {
   let es = '', pts = '', labs = [];
   A.edges.forEach(e => {
     if (e.type === 'owns') return;
-    if (!layers[e.type]) return;
+    if (!layers[e.type] || (layers.confirmed && e.confidence !== 'confirmed')) return;
     const g = edgeGeom(e); if (!g) return;
     e._g = g;
     const w = edgeWidth(e);
-    es += `<path class="edge ${e.type}${e.q ? ' q' : ''}" data-e="${e.id}" ${e.type === 'money' ? `id="mp-${e.id}" style="stroke-width:${w.toFixed(1)}px"` : ''} d="${g.d}"/><path class="hit" data-e="${e.id}" d="${g.d}"><title>${esc(e.why)}</title></path>`;
+    es += `<path class="edge ${e.type} ${e.confidence}${e.q ? ' q' : ''}" data-e="${e.id}" ${e.type === 'money' ? `id="mp-${e.id}" style="stroke-width:${w.toFixed(1)}px"` : ''} d="${g.d}"/><path class="hit" data-e="${e.id}" d="${g.d}"><title>${esc(e.why)}</title></path>${e.confidence === 'suspected' ? `<text class="edge-question" data-e="${e.id}" x="${g.mid[0]}" y="${g.mid[1] - 16}">?</text>` : ''}`;
     if (e.type === 'money') {
       if (layers.flow) { const n = 1 + Math.round(3 * Math.sqrt(e.total / maxFlow)), dur = 3.2; for (let i = 0; i < n; i++) pts += `<circle class="pt" data-e="${e.id}" r="${(1.6 + w / 5).toFixed(1)}"><animateMotion dur="${dur}s" begin="-${(i * dur / n).toFixed(2)}s" repeatCount="indefinite" rotate="auto"><mpath href="#mp-${e.id}"/></animateMotion></circle>`; }
-      labs.push({ e, x: g.mid[0], y: g.mid[1], a: e.label, d: e.sub, h: 34, sh: false });
+      labs.push({ e, x: g.mid[0], y: g.mid[1], a: e.label, d: e.txs.some(t => !t.source) ? 'No source' : e.sub, h: 34, sh: false });
     } else if (e.type === 'shared' && e.label) labs.push({ e, x: g.mid[0], y: g.mid[1], a: e.label, d: '', h: 20, sh: true });
   });
   $('#lay-edges').innerHTML = es;
@@ -1229,7 +1290,7 @@ function drawEdges() {
   for (let i = 0; i < labs.length; i++) for (let j = 0; j < i; j++) { const a = labs[j], b = labs[i]; if (Math.abs(a.x - b.x) < 110 && b.y - a.y < (a.h + b.h) / 2 + 4) b.y = a.y + (a.h + b.h) / 2 + 4; }
   $('#lay-labels').innerHTML = labs.map(l => {
     const w = Math.max(l.a.length * (l.sh ? 6 : 7.6), l.d.length * 5.1) + 18;
-    return `<g class="elab ${l.sh ? 'sh' : ''}" data-e="${l.e.id}"><rect x="${(l.x - w / 2).toFixed(1)}" y="${(l.y - l.h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${l.h}" rx="${l.sh ? 10 : 9}"/>
+    return `<g class="elab ${l.sh ? 'sh' : ''} ${l.e.confidence}" data-e="${l.e.id}"><rect x="${(l.x - w / 2).toFixed(1)}" y="${(l.y - l.h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${l.h}" rx="${l.sh ? 10 : 9}"/>
       <text class="amt" x="${l.x.toFixed(1)}" y="${(l.y + (l.sh ? 3.5 : -1)).toFixed(1)}">${esc(l.a)}</text>${l.d ? `<text class="dt" x="${l.x.toFixed(1)}" y="${(l.y + 12).toFixed(1)}">${esc(l.d)}</text>` : ''}</g>`;
   }).join('');
 }
@@ -1267,7 +1328,7 @@ function applyState() {
   svg.classList.toggle('dim', !!hs);
   $$('#lay-nodes .ent, #lay-nodes .nchip').forEach(el => { el.classList.toggle('hl', !!hs && hs.n.has(el.dataset.id)); el.classList.toggle('sel', el.dataset.id === sel); });
   $$('#lay-nodes .gnode').forEach(el => { const g = groups.find(x => x.id === el.dataset.g); el.classList.toggle('hl', !!hs && g && g.ids.some(id => hs.n.has(id))); el.classList.toggle('focus', !!g?.person && g.person.id === sel); });
-  $$('#lay-edges .edge, #lay-labels .elab, #lay-pts .pt').forEach(el => el.classList.toggle('hl', !!hs && hs.e.has(el.dataset.e)));
+  $$('#lay-edges .edge, #lay-edges .edge-question, #lay-labels .elab, #lay-pts .pt').forEach(el => el.classList.toggle('hl', !!hs && hs.e.has(el.dataset.e)));
   // timeline: hide flows that have not happened yet
   const moneyEdges = A.edges.filter(e => e.type === 'money');
   moneyEdges.forEach(e => {
@@ -1449,8 +1510,9 @@ function caseSummary() {
   return parts.join(' ') || 'Add victims, accounts and payments to start the picture.';
 }
 function renderKpis() {
-  const S = state, openQ = S.questions.filter(q => q.status !== 'answered').length, found = A.edges.filter(e => e.type !== 'owns').length;
+  const S = state, openQ = S.questions.filter(q => q.status !== 'answered').length, found = A.edges.filter(e => e.type !== 'owns').length, coverage = evidenceCoverage();
   const k = [['v', 'Victims', S.people.filter(p => p.role === 'victim').length, '', x => Math.round(x)], ['l', 'Reported loss', A.totalLoss, 'loss', x => money(Math.round(x), true)],
+    ['e', 'Evidence coverage', coverage.percent, '', x => Math.round(x) + '%'],
     ['s', 'Alleged fraudsters', S.people.filter(p => p.role === 'suspect').length, 'm', x => Math.round(x)], ['a', 'Accounts', S.accounts.length, 'm', x => Math.round(x)],
     ['k', 'Links found', found, 'links', x => Math.round(x)], ['q', 'Open questions', openQ, 'q', x => Math.round(x)]];
   if (!$('#kpis').children.length) $('#kpis').innerHTML = k.map(([id, l, , c]) => `<div class="kpi ${c}"><b id="k-${id}">0</b><span>${l}</span></div>`).join('');
@@ -1503,11 +1565,11 @@ function renderRight() {
   const body = $('#right-body');
   if (rightTab === 'findings') {
     body.innerHTML = `<p class="lede">${caseSummary()}</p><p class="lede-sub">${A.findings.length} findings, worked out from the case data. Select one to see it on the map.</p>` +
-      A.findings.map((f, i) => `<button type="button" class="finding ${f.sev} ${focusFinding === f.id ? 'on' : ''}" data-finding="${f.id}"><div class="f-head"><span class="sev">${f.sev === 'high' ? 'Key link' : f.sev === 'med' ? 'Worth checking' : 'Info'}</span><span class="f-kind">${esc(f.kind)}</span></div><div class="f-title">${esc(f.title)}</div><div class="f-text">${f.text}</div></button>`).join('');
+      A.findings.map((f, i) => `<button type="button" class="finding ${f.sev} ${focusFinding === f.id ? 'on' : ''}" data-finding="${f.id}"><div class="f-head"><span class="sev">${f.sev === 'high' ? 'Key link' : f.sev === 'med' ? 'Worth checking' : 'Info'}</span><span class="f-kind">${esc(f.kind)}</span></div><div class="f-title">${esc(f.title)}</div><div class="f-text">${f.text}<small style="display:block;margin-top:6px;color:var(--muted)">Sources: ${esc(keyLinkSources(f))}</small></div></button>`).join('');
   } else if (rightTab === 'questions') {
     const open = state.questions.filter(q => q.status !== 'answered'), done = state.questions.filter(q => q.status === 'answered');
     const chips = id => A.edges.filter(e => e.from === id).map(e => `<button type="button" class="linkchip" data-goto="${e.to}" title="${esc(e.why)}">${esc(A.nameOf(e.to))}</button>`).join('');
-    const card = q => `<div class="q-card"><div class="q-text">${esc(q.text)}</div>${q.status === 'answered' && q.answer ? `<div class="q-answer">${esc(q.answer)}</div>` : ''}<div class="q-meta"><span class="status-pill ${q.status === 'answered' ? 'status-answered' : 'status-open'}">${q.status === 'answered' ? 'Answered' : 'Open'}</span>${chips(q.id)}<span style="flex:1"></span><button class="btn small" type="button" data-edit="${q.id}">${q.status === 'answered' ? 'Edit' : 'Answer'}</button></div></div>`;
+    const card = q => `<div class="q-card"><div class="q-text">${esc(q.text)}</div>${q.status === 'answered' && q.answer ? `<div class="q-answer">${esc(q.answer)}<small style="display:block;color:var(--muted);margin-top:5px">${confidenceName(q.confidence)} · Source: ${esc(sourceName(q))}</small></div>` : ''}<div class="q-meta"><span class="status-pill ${q.status === 'answered' ? 'status-answered' : 'status-open'}">${q.status === 'answered' ? 'Answered' : 'Open'}</span>${chips(q.id)}<span style="flex:1"></span><button class="btn small" type="button" data-edit="${q.id}">${q.status === 'answered' ? 'Edit' : 'Answer'}</button></div></div>`;
     body.innerHTML = `<div class="q-add"><textarea class="input" id="q-new" placeholder="Ask an open question…"></textarea><button class="btn primary" type="button" id="q-add-btn">Add</button></div>
       <div class="sub-h">Open · ${open.length}</div>${open.map(card).join('') || '<p class="empty-note">No open questions.</p>'}
       ${A.suggested.length ? `<div class="sub-h">Gaps the map spotted · ${A.suggested.length}</div>` + A.suggested.map((s, i) => `<div class="q-card suggested"><div class="q-text">${esc(s.text)}</div><div class="q-meta"><span style="flex:1"></span><button class="btn small" type="button" data-suggest="${i}">+ Ask this</button></div></div>`).join('') : ''}
@@ -1515,33 +1577,33 @@ function renderRight() {
   } else body.innerHTML = dossierHTML();
 }
 
-const LINE = { money: ['var(--money)', ''], owns: ['var(--account)', ''], shared: ['var(--shared)', 'dash'], mention: ['var(--note)', 'dot'] };
+const LINE = { money: 'var(--money)', owns: 'var(--account)', shared: 'var(--shared)', mention: 'var(--note)' };
 function linksHTML(ids) {
   const es = A.edges.filter(e => e.type !== 'owns' && ids.some(id => e.from === id || e.to === id));
   if (!es.length) return '<p class="empty-note">No links yet.</p>';
-  return es.map(e => { const mine = ids.includes(e.from) ? e.from : e.to, other = mine === e.from ? e.to : e.from; const [c, st] = LINE[e.type];
+  return es.map(e => { const mine = ids.includes(e.from) ? e.from : e.to, other = mine === e.from ? e.to : e.from; const c = LINE[e.type];
     const dir = e.type === 'money' ? (e.from === mine ? 'Paid ' : 'Received from ') : '';
-    return `<div class="conn"><i class="${st}" style="--c:${e.q ? 'var(--question)' : c}"></i><div>${dir}<button type="button" data-goto="${other}">${esc(A.nameOf(other))}</button>${e.type === 'money' ? ` <span class="mono" style="color:var(--money)">${money(e.total)}</span>` : ''}<small>${esc(e.why)}</small></div></div>`; }).join('');
+    return `<div class="conn"><i class="${e.confidence === 'suspected' ? 'dash' : ''}" style="--c:${e.q ? 'var(--question)' : c};opacity:${e.confidence === 'reported' ? '.7' : e.confidence === 'suspected' ? '.45' : '1'}"></i><div>${dir}<button type="button" data-goto="${other}">${esc(A.nameOf(other))}</button>${e.type === 'money' ? ` <span class="mono" style="color:var(--money)">${money(e.total)}</span>` : ''}<small>${confidenceName(e.confidence)} · ${esc(e.why)}</small></div></div>`; }).join('');
 }
 function dossierHTML() {
   if (!sel) return `<p class="lede" style="margin-top:8px">Pick anyone in <em>People</em>, or any card on the map, to open their dossier.</p><p class="lede-sub">You'll see what they lost or received, the money trail, every link and the reason for it.</p>`;
   const S = state;
   if (sel.startsWith('edge:')) { const e = A.edges.find(x => 'edge:' + x.id === sel); if (!e) return '';
-    if (e.type !== 'money') return `<div class="dossier-hero r-account"><span class="acard-ic" style="--c:var(--shared);--soft:var(--shared-soft)"><svg class="i" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span><div><div class="d-role" style="--c:var(--shared)">Found link</div><div class="d-name" style="font-size:20px">${esc(A.nameOf(e.from))} ↔ ${esc(A.nameOf(e.to))}</div></div></div><p style="font-size:13px">${esc(e.why)}</p>`;
+    if (e.type !== 'money') return `<div class="dossier-hero r-account"><span class="acard-ic" style="--c:var(--shared);--soft:var(--shared-soft)"><svg class="i" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span><div><div class="d-role" style="--c:var(--shared)">Found link · ${confidenceName(e.confidence)}</div><div class="d-name" style="font-size:20px">${esc(A.nameOf(e.from))} ↔ ${esc(A.nameOf(e.to))}</div></div></div><p style="font-size:13px">${esc(e.why)}</p>${evidenceHTML(e.records)}`;
     return `<div class="dossier-hero r-money"><span class="acard-ic"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg></span><div><div class="d-role">Money flow</div><div class="d-name" style="font-size:20px">${esc(accHolderName(e.from))} → ${esc(accHolderName(e.to))}</div><div class="d-sub mono" style="color:var(--money)">${money(e.total)}</div></div></div>
-      <div class="sub-h">Payments · ${e.txs.length}</div>${e.txs.map(t => `<div class="conn"><i style="--c:var(--money)"></i><div style="flex:1"><button type="button" data-goto="${t.id}">${fmtDate(t.date)}</button><small>${esc([t.method, t.reference && 'Ref ' + t.reference, t.notes].filter(Boolean).join(' · '))}</small></div><span class="mono" style="color:var(--money)">${money(t.amount)}</span></div>`).join('')}`;
+      ${evidenceHTML(e.txs)}<div class="sub-h">Payments · ${e.txs.length}</div>${e.txs.map(t => `<div class="conn"><i style="--c:var(--money)"></i><div style="flex:1"><button type="button" data-goto="${t.id}">${fmtDate(t.date)}</button><small>${esc([t.method, t.reference && 'Ref ' + t.reference, t.notes].filter(Boolean).join(' · '))}</small></div><span class="mono" style="color:var(--money)">${money(t.amount)}</span></div>`).join('')}`;
   }
   const t = S.transactions.find(x => x.id === sel);
   if (t) return `<div class="dossier-hero r-money"><span class="acard-ic"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg></span><div><div class="d-role">Payment · ${fmtDate(t.date)}</div><div class="d-name mono" style="font-family:var(--mono);font-size:24px;color:var(--money)">${money(t.amount)}</div></div></div>
     <dl class="kv"><dt>From</dt><dd><button class="linkchip" data-goto="${t.from}">${esc(accHolderName(t.from))}</button><br><span class="mono" style="font-size:11.5px;color:var(--muted)">${esc(A.accById.get(t.from)?.number || '')}</span></dd><dt>To</dt><dd><button class="linkchip" data-goto="${t.to}">${esc(accHolderName(t.to))}</button><br><span class="mono" style="font-size:11.5px;color:var(--muted)">${esc(A.accById.get(t.to)?.number || '')}</span></dd>${t.method ? `<dt>Method</dt><dd>${esc(t.method)}</dd>` : ''}${t.reference ? `<dt>Reference</dt><dd class="mono">${esc(t.reference)}</dd>` : ''}${t.notes ? `<dt>Notes</dt><dd>${esc(t.notes)}</dd>` : ''}</dl>
-    <div class="d-actions"><button class="btn small" data-edit="${t.id}" type="button">Edit payment</button></div>`;
+    ${evidenceHTML([t])}<div class="d-actions"><button class="btn small" data-edit="${t.id}" type="button">Edit payment</button></div>`;
   const n = A.nodeMap.get(sel); if (!n) return '';
   const r = n.ref;
   if (n.kind === 'note' || n.kind === 'question') {
     const q = n.kind === 'question';
     return `<div class="dossier-hero ${q ? 'r-question' : 'r-note'}"><span class="acard-ic"><svg class="i" viewBox="0 0 24 24">${q ? '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/>' : '<path d="M5 3h10l4 4v14H5z"/><path d="M9 11h6M9 15h6"/>'}</svg></span><div><div class="d-role">${q ? (r.status === 'answered' ? 'Answered question' : 'Open question') : 'Note' + (r.date ? ' · ' + fmtDate(r.date) : '')}</div></div></div>
       <p style="font:400 19px/1.35 var(--serif);margin:0 2px 10px">${esc(r.text)}</p>${q && r.answer ? `<div class="q-answer">${esc(r.answer)}</div>` : ''}
-      <div class="d-actions"><button class="btn small" data-edit="${r.id}" type="button">${q && r.status !== 'answered' ? 'Answer' : 'Edit'}</button></div><div class="sub-h">Mentions</div>${linksHTML([r.id])}`;
+      ${(!q || r.status === 'answered') ? evidenceHTML([r]) : ''}<div class="d-actions"><button class="btn small" data-edit="${r.id}" type="button">${q && r.status !== 'answered' ? 'Answer' : 'Edit'}</button></div><div class="sub-h">Mentions</div>${linksHTML([r.id])}`;
   }
   if (n.kind === 'account') {
     const inn = A.inflow.get(r.id) || 0, out = A.outflow.get(r.id) || 0, vs = [...(A.reachedBy.get(r.id) || [])];
@@ -1551,7 +1613,7 @@ function dossierHTML() {
       <div class="tile"><b>${A.ownerId.get(r.id) ? esc(clip(personName(A.ownerId.get(r.id)), 16)) : '<span style="color:var(--question)">Unknown</span>'}</b><span>Holder</span></div><div class="tile"><b>${vs.length}</b><span>Victims traced here</span></div></div>
       <div class="d-actions"><button class="btn small" data-edit="${r.id}" type="button">Edit account</button><button class="btn small" data-ask="${r.id}" type="button">Ask a question</button></div>
       ${vs.length ? `<div class="sub-h">Money traced from</div>${vs.map(v => `<div class="conn"><i style="--c:var(--victim)"></i><div><button type="button" data-goto="${v}">${esc(personName(v))}</button><small>${esc(A.trails.get(v).pathTo(r.id).ids.map(id => accHolderName(id)).join(' → '))}</small></div></div>`).join('')}` : ''}
-      ${tracedAccountHTML(r.id)}
+      ${tracedAccountHTML(r.id)}${evidenceHTML([r, ...pays])}
       <div class="sub-h">Payments · ${pays.length}</div>${pays.map(x => `<div class="conn"><i style="--c:${x.to === r.id ? 'var(--money)' : 'var(--fraud)'}"></i><div style="flex:1"><button type="button" data-goto="${x.id}">${x.to === r.id ? 'From ' + esc(accHolderName(x.from)) : 'To ' + esc(accHolderName(x.to))}</button><small>${fmtDate(x.date)}${x.reference ? ' · Ref ' + esc(x.reference) : ''}</small></div><span class="mono" style="color:${x.to === r.id ? 'var(--money)' : 'var(--fraud)'}">${x.to === r.id ? '+' : '−'}${money(x.amount)}</span></div>`).join('') || '<p class="empty-note">No payments recorded.</p>'}
       <div class="sub-h">Other links</div>${linksHTML([r.id])}`;
   }
@@ -1576,7 +1638,7 @@ function dossierHTML() {
     <div class="tiles">${tiles.map(([v, l, c]) => `<div class="tile"><b ${c ? `style="color:${c}"` : ''}>${v}</b><span>${l}</span></div>`).join('')}</div>
     <div class="d-actions"><button class="btn small primary" type="button" data-act="replay">Replay trail</button><button class="btn small" data-edit="${r.id}" type="button">Edit</button><button class="btn small" data-add-acc="${r.id}" type="button">+ Account</button><button class="btn small" data-ask="${r.id}" type="button">Ask a question</button></div>
     ${r.notes ? `<p style="font-size:12.5px;color:var(--text-2);margin:12px 2px 0;line-height:1.55">${esc(r.notes)}</p>` : ''}
-    ${r.role === 'victim' ? tracedVictimHTML(r.id) : tracedHolderHTML(r.id)}
+    ${r.role === 'victim' ? tracedVictimHTML(r.id) : tracedHolderHTML(r.id)}${evidenceHTML([r, ...accs, ...S.transactions.filter(t => accIds.includes(t.from) || accIds.includes(t.to))])}
     ${accs.length ? `<div class="sub-h">Accounts</div>${accs.map(a => `<div class="conn"><i style="--c:var(--account)"></i><div><button type="button" data-goto="${a.id}">${esc(accLabel(a))}</button><small class="mono">${esc(a.number || '')}</small></div></div>`).join('')}` : ''}
     ${trail}<div class="sub-h">Links &amp; reasons</div>${linksHTML([r.id, ...accIds])}`;
 }
@@ -1612,6 +1674,10 @@ function renderAllUnsafe() {
   A = analyse();
   A.trace = traceFunds(state.meta.tracing === 'fifo' ? 'fifo' : 'prorata');
   A.findings.push(...traceFindings());
+  const coverage = evidenceCoverage();
+  if (coverage.missing.length) A.findings.push({ sev: 'info', kind: 'Evidence', title: `${coverage.missing.length} fact${coverage.missing.length === 1 ? ' has' : 's have'} no source`,
+    text: `${coverage.sourced} of ${coverage.all.length} facts have a source (${coverage.percent}%). Add the missing sources before treating those facts as verified.`,
+    nodes: coverage.missing.filter(r => A.nodeMap.has(r.id)).map(r => r.id), edges: A.edges.filter(e => e.txs?.some(t => coverage.missing.includes(t))).map(e => e.id) });
   const order = { high: 0, med: 1, info: 2 }, kindOrder = k => k === 'Common destination' ? 0 : k === 'Traced amounts' ? 1 : 2;
   A.findings.sort((a, b) => order[a.sev] - order[b.sev] || kindOrder(a.kind) - kindOrder(b.kind));
   A.findings.forEach((f, i) => f.id = 'f' + i);
@@ -1900,6 +1966,12 @@ function victimStory(v) {
   return { v, loss: A.lossBy.get(v.id) || 0, facts, hs, frame, reachedCount: reached.length };
 }
 function keyLinks() { return A.findings.filter(f => f.sev === 'high' && f.kind !== 'Money trail').slice(0, 4); }
+function keyLinkSources(f) {
+  const records = [...f.edges.flatMap(id => A.edges.find(e => e.id === id)?.records || []), ...f.nodes.map(id => A.nodeMap.get(id)?.ref).filter(Boolean)];
+  const names = [...new Set(records.map(sourceName))];
+  return names.length ? clip(names.join(' · '), 180) : 'No source';
+}
+const LINE_LEGEND = 'Solid: confirmed  ·  Lighter: reported  ·  Dashed ?: suspected';
 
 /* ---------- presenter ---------- */
 let slides = [], slideIdx = 0;
@@ -1909,13 +1981,13 @@ function buildSlides() {
   const involved = new Set(A.edges.filter(e => e.type === 'money').flatMap(e => [e.from, e.to])).size;
   const out = [];
   out.push({ cls: 'cover', html: `<div class="s-bg" data-mount="cover"></div><div class="s-shade"></div><div class="s-kicker">${esc(S.meta.ref)} · Case briefing · ${fmtDate(new Date().toISOString().slice(0, 10))}</div><h1 class="s-title">${esc(S.meta.title || 'Untitled case')}</h1><p class="s-lede">${caseSummary().replace(/<em>/g, '<b>').replace(/<\/em>/g, '</b>')}</p>
-    <div class="s-kpis"><div class="s-kpi"><b>${victims.length}</b><span>Victims</span></div><div class="s-kpi"><b style="color:var(--fraud)">${money(A.totalLoss, true)}</b><span>Reported loss</span></div><div class="s-kpi"><b>${involved}</b><span>Accounts in the trail</span></div><div class="s-kpi"><b style="color:var(--question)">${openQ.length}</b><span>Open questions</span></div></div>`,
+    <div class="s-kpis"><div class="s-kpi"><b>${victims.length}</b><span>Victims</span></div><div class="s-kpi"><b style="color:var(--fraud)">${money(A.totalLoss, true)}</b><span>Reported loss</span></div><div class="s-kpi"><b>${evidenceCoverage().percent}%</b><span>Evidence coverage</span></div><div class="s-kpi"><b style="color:var(--question)">${openQ.length}</b><span>Open questions</span></div></div>`,
     mount: { cover: { bounds: null, hs: null, particles: true } } });
   out.push({ html: `<div class="s-kicker">Follow the money</div><h2 class="s-title md">How the money moved</h2><div class="s-map" style="margin-top:22px" data-mount="m"></div>`, mount: { m: { bounds: null, hs: null, particles: true } } });
   victims.forEach((st, i) => out.push({ html: `<div class="s-vhead r-victim"><span class="av s-av">${esc(initials(st.v.name))}</span><div style="min-width:0"><div class="s-kicker">Victim ${i + 1} of ${victims.length}</div><h2 class="s-title md" style="margin-top:8px">${esc(st.v.name)}</h2><ul class="s-facts">${st.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul></div>
       <div class="s-vloss"><div class="s-big" style="color:var(--fraud)">${money(st.loss)}</div><div class="s-biglabel">reported lost</div></div></div><div class="s-map" style="margin-top:22px" data-mount="m"></div>`,
     mount: { m: { bounds: boundsOf(st.frame), hs: st.hs, particles: true } } }));
-  keyLinks().forEach((f, i, arr) => out.push({ html: `<div class="s-kicker">Key link ${i + 1} of ${arr.length} · ${esc(f.kind)}</div><h2 class="s-title md" style="max-width:32ch">${esc(f.title)}</h2><p class="s-cap">${f.text}</p><div class="s-map" style="margin-top:18px" data-mount="m"></div>`,
+  keyLinks().forEach((f, i, arr) => out.push({ html: `<div class="s-kicker">Key link ${i + 1} of ${arr.length} · ${esc(f.kind)}</div><h2 class="s-title md" style="max-width:32ch">${esc(f.title)}</h2><p class="s-cap">${f.text}</p><div class="s-map" style="margin-top:18px" data-mount="m"></div><p class="s-evidence">Sources: ${esc(keyLinkSources(f))}</p><div class="s-legend">${LINE_LEGEND}</div>`,
     mount: { m: { bounds: boundsOf([...withOwners(f.nodes)]), hs: hsForIds(f.nodes, f.edges), particles: true } } }));
   const tg = timelineGraphic();
   if (tg) out.push({ html: `<div class="s-kicker">Chronology</div><h2 class="s-title md">How the losses built up</h2><div class="s-graphic">${tg.svg}</div>` });
@@ -1998,7 +2070,7 @@ async function exportPPTX() {
     kicker(sl, `${S.meta.ref || ''} · Case briefing · ${fmtDate(new Date().toISOString().slice(0, 10))}`, 0.7, 0.8);
     sl.addText(S.meta.title || 'Untitled case', { x: 0.7, y: 1.2, w: 7.6, h: 2.2, fontSize: 50, color: C.text, fontFace: HEAD, valign: 'top', margin: 0 });
     sl.addText(plain(caseSummary()), { x: 0.7, y: 3.45, w: 6.6, h: 1.3, fontSize: 16, color: C.muted, fontFace: BODY, valign: 'top', margin: 0 });
-    [[victims.length, 'VICTIMS', C.text], [money(A.totalLoss, true), 'REPORTED LOSS', C.fraud], [involved, 'ACCOUNTS IN THE TRAIL', C.text], [openQ.length, 'OPEN QUESTIONS', C.gold]].forEach(([v, l, c], i) => {
+    [[victims.length, 'VICTIMS', C.text], [money(A.totalLoss, true), 'REPORTED LOSS', C.fraud], [evidenceCoverage().percent + '%', 'EVIDENCE COVERAGE', C.text], [openQ.length, 'OPEN QUESTIONS', C.gold]].forEach(([v, l, c], i) => {
       const x = 0.7 + i * 3.05;
       sl.addShape(pptx.ShapeType.line, { x, y: 5.35, w: 2.75, h: 0, line: { color: C.line, width: 1 } });
       sl.addText(String(v), { x, y: 5.45, w: 2.95, h: 0.85, fontSize: 38, color: c, fontFace: HEAD, margin: 0 });
@@ -2027,7 +2099,9 @@ async function exportPPTX() {
       const f = keys[i]; sl = pptx.addSlide({ masterName: 'TL' });
       kicker(sl, `Key link ${i + 1} of ${keys.length} · ${f.kind}`); title(sl, f.title, { fontSize: 26, h: 0.8 });
       sl.addText(plain(f.text), { x: 0.6, y: 1.65, w: 12.1, h: 0.6, fontSize: 13, color: C.muted, fontFace: BODY, valign: 'top', margin: 0 });
-      await mapImg(sl, boundsOf([...withOwners(f.nodes)]), hsForIds(f.nodes, f.edges), 0.5, 2.35, 12.33, 4.55);
+       await mapImg(sl, boundsOf([...withOwners(f.nodes)]), hsForIds(f.nodes, f.edges), 0.5, 2.35, 12.33, 3.9);
+       sl.addText('Sources: ' + keyLinkSources(f), { x: 0.6, y: 6.35, w: 12.1, h: 0.28, fontSize: 10, color: C.muted, fontFace: BODY, margin: 0 });
+       sl.addText(LINE_LEGEND, { x: 0.6, y: 6.65, w: 12.1, h: 0.23, fontSize: 8.5, color: C.faint, fontFace: BODY, margin: 0 });
     }
 
     // 5. timeline graphic
@@ -2081,6 +2155,9 @@ const f = (id, label, value = '', opts = {}) => `<div class="field"><label for="
 const choice = (id, options, value) => `<div class="choice" id="${id}" data-value="${value}">${options.map(([v, l]) => `<button type="button" data-v="${v}" class="${v === value ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 const val = id => ($('#' + id)?.value ?? '').trim();
 const choiceVal = id => $('#' + id).dataset.value;
+const evidenceForm = (r, prefix = 'f', answer = false) => `${f(prefix + '-source', answer ? 'Answer source' : 'Source', r.source || '', { ph: 'e.g. HSBC statement p.3' })}
+  <div class="field"><label>How sure are we?</label>${choice(prefix + '-confidence', [['confirmed', 'Confirmed'], ['reported', 'Reported'], ['suspected', 'Suspected']], r.confidence || 'reported')}</div>`;
+const readEvidence = (prefix = 'f') => ({ source: val(prefix + '-source'), confidence: choiceVal(prefix + '-confidence') });
 
 function openDialog(title, bodyHTML, onSave, onDelete, saveLabel = 'Save') {
   $('#dlg-title').textContent = title;
@@ -2107,16 +2184,16 @@ $('#dlg-delete').addEventListener('click', e => {
 
 function peopleList() { return `<datalist id="dl-people">${state.people.map(p => `<option value="${esc(p.name)}">`).join('')}</datalist>`; }
 function editPerson(p, role) {
-  const isNew = !p; p = p || { id: uid('p'), role: role || 'victim', name: '', aliases: '', phone: '', email: '', notes: '' };
+  const isNew = !p; p = p || { id: uid('p'), role: role || 'victim', name: '', aliases: '', phone: '', email: '', notes: '', source: '', confidence: 'reported' };
   openDialog(isNew ? 'Add person' : 'Edit ' + p.name, `
     <div class="field"><label>Role in the case</label>${choice('f-role', [['victim', 'Victim'], ['suspect', 'Alleged fraudster'], ['other', 'Other party']], p.role)}</div>
     ${f('f-name', 'Full name or company name', p.name, { req: true, ph: 'e.g. Margaret Holloway' })}
     ${f('f-aliases', 'Other names used', p.aliases, { ph: 'Separate with commas', hint: 'Aliases are matched in notes and account holders too.' })}
     <div class="grid2">${f('f-phone', 'Phone', p.phone, { ph: '+44 7700 900000' })}${f('f-email', 'Email', p.email, { type: 'email', ph: 'name@example.com' })}</div>
-    ${f('f-notes', 'Notes', p.notes, { area: true, ph: 'How they were contacted, what they were told, anything relevant' })}`,
+    ${f('f-notes', 'Notes', p.notes, { area: true, ph: 'How they were contacted, what they were told, anything relevant' })}${evidenceForm(p)}`,
     () => {
       if (!val('f-name')) { toast('Add a name first'); return false; }
-      Object.assign(p, { role: choiceVal('f-role'), name: val('f-name'), aliases: val('f-aliases'), phone: val('f-phone'), email: val('f-email'), notes: val('f-notes') });
+      Object.assign(p, { role: choiceVal('f-role'), name: val('f-name'), aliases: val('f-aliases'), phone: val('f-phone'), email: val('f-email'), notes: val('f-notes'), ...readEvidence() });
       if (isNew) state.people.push(p);
       toast(isNew ? 'Added ' + p.name : 'Saved');
     },
@@ -2124,18 +2201,18 @@ function editPerson(p, role) {
 }
 const ACC_OPTS = Object.entries(ACC_TYPE).map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
 function editAccount(a, presetHolder = '') {
-  const isNew = !a; a = a || { id: uid('a'), holder: presetHolder, institution: '', number: '', type: 'bank', notes: '' };
+  const isNew = !a; a = a || { id: uid('a'), holder: presetHolder, institution: '', number: '', type: 'bank', notes: '', source: '', confidence: 'reported' };
   const txCount = state.transactions.filter(t => t.from === a.id || t.to === a.id).length;
   openDialog(isNew ? 'Add account or wallet' : 'Edit account', `${peopleList()}
     ${f('f-holder', 'Account holder', a.holder, { list: 'dl-people', ph: 'Pick a person, or leave empty if unknown', hint: 'Must match a person’s name or alias to link them.' })}
     <div class="grid2">${f('f-inst', 'Bank or provider', a.institution, { ph: 'e.g. Barclays, Revolut, Coinbase' })}
       <div class="field"><label for="f-type">Type</label><select class="input" id="f-type">${ACC_OPTS}</select></div></div>
     ${f('f-number', 'Account number, IBAN or wallet address', a.number, { mono: true, ph: 'e.g. 20-45-77 43891022' })}
-    ${f('f-anotes', 'Notes', a.notes, { area: true })}
+    ${f('f-anotes', 'Notes', a.notes, { area: true })}${evidenceForm(a)}
     ${txCount ? `<p class="hint" style="font-size:11.5px;color:var(--muted)">Deleting this account also deletes its ${txCount} transaction${txCount > 1 ? 's' : ''}.</p>` : ''}`,
     () => {
       if (!val('f-number') && !val('f-inst')) { toast('Add a provider or an account number'); return false; }
-      Object.assign(a, { holder: val('f-holder'), institution: val('f-inst'), number: val('f-number'), type: $('#f-type').value, notes: val('f-anotes') });
+      Object.assign(a, { holder: val('f-holder'), institution: val('f-inst'), number: val('f-number'), type: $('#f-type').value, notes: val('f-anotes'), ...readEvidence() });
       if (isNew) state.accounts.push(a);
     },
     isNew ? null : () => { state.accounts = state.accounts.filter(x => x.id !== a.id); state.transactions = state.transactions.filter(t => t.from !== a.id && t.to !== a.id); delete state.pos[a.id]; });
@@ -2145,21 +2222,21 @@ function accountOptions(sel) {
   return `<option value="">Choose an account…</option>` + state.accounts.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${esc(accHolderName(a.id))} · ${esc(accLabel(a))}</option>`).join('') + `<option value="__new">+ New account…</option>`;
 }
 function newAccFields(p) { return `<div id="${p}-new" hidden style="padding:4px 10px 10px;margin-top:6px;border:1px dashed var(--line-strong);border-radius:8px">
-  <div class="grid2">${f(p + '-holder', 'Holder', '', { list: 'dl-people', ph: 'Name or empty' })}${f(p + '-inst', 'Bank or provider', '')}</div>${f(p + '-num', 'Account number or wallet', '', { mono: true })}</div>`; }
+  <div class="grid2">${f(p + '-holder', 'Holder', '', { list: 'dl-people', ph: 'Name or empty' })}${f(p + '-inst', 'Bank or provider', '')}</div>${f(p + '-num', 'Account number or wallet', '', { mono: true })}${evidenceForm({ source: '', confidence: 'reported' }, p)}</div>`; }
 function editTx(t) {
-  const isNew = !t; t = t || { id: uid('t'), date: '', from: '', to: '', amount: 0, method: '', reference: '', notes: '' };
+  const isNew = !t; t = t || { id: uid('t'), date: '', from: '', to: '', amount: 0, method: '', reference: '', notes: '', source: '', confidence: 'reported' };
   openDialog(isNew ? 'Add transaction' : 'Edit transaction', `${peopleList()}
     <datalist id="dl-method">${['Faster Payment', 'CHAPS', 'BACS', 'Wire transfer', 'SEPA', 'Card payment', 'Cash deposit', 'Cash withdrawal', 'Cheque', 'Crypto purchase', 'Crypto transfer', 'Gift cards', 'Zelle', 'PayPal'].map(m => `<option value="${m}">`).join('')}</datalist>
     <div class="grid2">${f('f-date', 'Date', t.date, { type: 'date' })}${f('f-amount', `Amount (${state.meta.currency})`, t.amount || '', { type: 'number', step: '0.01', req: true, ph: '0.00' })}</div>
     <div class="field"><label for="f-from">From account</label><select class="input" id="f-from">${accountOptions(t.from)}</select>${newAccFields('nf')}</div>
     <div class="field"><label for="f-to">To account</label><select class="input" id="f-to">${accountOptions(t.to)}</select>${newAccFields('nt')}</div>
     <div class="grid2">${f('f-method', 'Method', t.method, { list: 'dl-method', ph: 'e.g. Faster Payment' })}${f('f-ref', 'Payment reference', t.reference, { mono: true })}</div>
-    ${f('f-tnotes', 'Notes', t.notes, { area: true })}`,
+    ${f('f-tnotes', 'Notes', t.notes, { area: true })}${evidenceForm(t)}`,
     () => {
       const resolve = (sel, p) => {
         if ($('#' + sel).value !== '__new') return $('#' + sel).value;
         if (!val(p + '-num') && !val(p + '-inst') && !val(p + '-holder')) return '';
-        const a = { id: uid('a'), holder: val(p + '-holder'), institution: val(p + '-inst'), number: val(p + '-num'), type: 'bank', notes: '' };
+        const a = { id: uid('a'), holder: val(p + '-holder'), institution: val(p + '-inst'), number: val(p + '-num'), type: 'bank', notes: '', ...readEvidence(p) };
         state.accounts.push(a); return a.id;
       };
       const amount = parseAmount(val('f-amount'));
@@ -2167,27 +2244,27 @@ function editTx(t) {
       const from = resolve('f-from', 'nf'), to = resolve('f-to', 'nt');
       if (!from || !to) { toast('Choose both accounts'); return false; }
       if (from === to) { toast('From and To must be different accounts'); return false; }
-      Object.assign(t, { date: parseDate(val('f-date')), amount, from, to, method: val('f-method'), reference: val('f-ref'), notes: val('f-tnotes') });
+      Object.assign(t, { date: parseDate(val('f-date')), amount, from, to, method: val('f-method'), reference: val('f-ref'), notes: val('f-tnotes'), ...readEvidence() });
       if (isNew) state.transactions.push(t);
     },
     isNew ? null : () => { state.transactions = state.transactions.filter(x => x.id !== t.id); });
   ['from', 'to'].forEach((k, i) => $('#f-' + k).addEventListener('change', e => { $(`#${i ? 'nt' : 'nf'}-new`).hidden = e.target.value !== '__new'; }));
 }
 function editNote(n) {
-  const isNew = !n; n = n || { id: uid('n'), date: new Date().toISOString().slice(0, 10), text: '' };
+  const isNew = !n; n = n || { id: uid('n'), date: new Date().toISOString().slice(0, 10), text: '', source: '', confidence: 'reported' };
   openDialog(isNew ? 'Add note or observation' : 'Edit note', `${f('f-ndate', 'Date', n.date, { type: 'date' })}
-    ${f('f-ntext', 'Note', n.text, { area: true, ph: 'Write freely. Names, account numbers (or “ending 1234”), phones, emails and wallets are linked on the map automatically.' })}`,
-    () => { if (!val('f-ntext')) { toast('Write the note first'); return false; } Object.assign(n, { date: parseDate(val('f-ndate')), text: val('f-ntext') }); if (isNew) state.notes.push(n); },
+    ${f('f-ntext', 'Note', n.text, { area: true, ph: 'Write freely. Names, account numbers (or “ending 1234”), phones, emails and wallets are linked on the map automatically.' })}${evidenceForm(n)}`,
+    () => { if (!val('f-ntext')) { toast('Write the note first'); return false; } Object.assign(n, { date: parseDate(val('f-ndate')), text: val('f-ntext'), ...readEvidence() }); if (isNew) state.notes.push(n); },
     isNew ? null : () => { state.notes = state.notes.filter(x => x.id !== n.id); delete state.pos[n.id]; });
   $('#f-ntext').style.minHeight = '140px';
 }
 function editQuestion(q, preset = '') {
-  const isNew = !q; q = q || { id: uid('q'), text: preset, status: 'open', answer: '' };
+  const isNew = !q; q = q || { id: uid('q'), text: preset, status: 'open', answer: '', source: '', confidence: 'reported' };
   openDialog(isNew ? 'Add question' : 'Question', `${f('f-qtext', 'Question', q.text, { area: true, ph: 'What do you still need to find out?' })}
     <div class="field"><label>Status</label>${choice('f-qstatus', [['open', 'Open'], ['answered', 'Answered']], q.status)}</div>
-    ${f('f-qanswer', 'Answer or what you found', q.answer, { area: true, ph: 'Leave empty while the question is open' })}`,
+    ${f('f-qanswer', 'Answer or what you found', q.answer, { area: true, ph: 'Leave empty while the question is open' })}${evidenceForm(q, 'f', true)}`,
     () => { if (!val('f-qtext')) { toast('Write the question first'); return false; }
-      Object.assign(q, { text: val('f-qtext'), status: choiceVal('f-qstatus'), answer: val('f-qanswer') });
+      Object.assign(q, { text: val('f-qtext'), status: choiceVal('f-qstatus'), answer: val('f-qanswer'), ...readEvidence() });
       if (isNew) state.questions.push(q); },
     isNew ? null : () => { state.questions = state.questions.filter(x => x.id !== q.id); delete state.pos[q.id]; });
   // typing an answer marks the question answered (can be switched back)
@@ -2274,11 +2351,13 @@ function parsePaste(text, commit) {
     rows.push(r);
   });
   if (commit) {
+    const evidence = readEvidence();
+    pending.forEach(a => Object.assign(a, evidence));
     state.accounts.push(...pending);
     const METHOD = /payment|transfer|chaps|bacs|faster|wire|sepa|swift|card|cash|cheque|check|crypto|zelle|paypal|gift/i;
     rows.filter(r => r.ok).forEach(r => {
       const isMethod = METHOD.test(r.method);
-      state.transactions.push({ id: uid('t'), date: r.date, from: r.fromAcc.id, to: r.toAcc.id, amount: r.amount, method: isMethod ? r.method : '', reference: isMethod ? '' : r.method, notes: r.notes });
+      state.transactions.push({ id: uid('t'), date: r.date, from: r.fromAcc.id, to: r.toAcc.id, amount: r.amount, method: isMethod ? r.method : '', reference: isMethod ? '' : r.method, notes: r.notes, ...evidence });
     });
     return rows.filter(r => r.ok).length;
   }
@@ -2291,7 +2370,7 @@ function openPaste() {
     <p class="hint" style="font-size:11.5px;color:var(--muted);margin:6px 0 0">Write From and To as <span class="mono">Name (Bank 12345678)</span>. Existing accounts are matched by number; new ones are created for you.</p>
     <div class="field"><label for="f-paste">Rows</label><textarea class="input mono" id="f-paste" style="min-height:130px;font-size:12px;white-space:pre" placeholder="2026-03-02 | Margaret Holloway (Barclays 43891022) | Unknown (Wise 88112093) | 2500 | Faster Payment | Final 'release' fee"></textarea></div>
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn small" type="button" id="copy-ai">Copy a prompt for ChatGPT / Claude</button><span class="hint" style="font-size:11px;color:var(--muted);align-self:center">Paste it with your case notes to get rows in this format.</span></div>
-    <div class="paste-preview" id="paste-prev" hidden></div>`,
+     <div class="paste-preview" id="paste-prev" hidden></div>${evidenceForm({ source: '', confidence: 'reported' })}`,
     () => { const n = parsePaste(val('f-paste'), true); if (!n) { toast('No complete rows to add yet'); return false; } toast(`Added ${n} transaction${n > 1 ? 's' : ''}`); }, null, 'Add to case');
   const upd = () => {
     const { rows } = parsePaste($('#f-paste').value, false);
@@ -2412,12 +2491,12 @@ function onRailAction(e) {
   if (f) { focusFinding = focusFinding === f.dataset.finding ? null : f.dataset.finding; sel = null; applyState(); renderRight(); if (focusFinding) { flyToIds(A.findings.find(x => x.id === focusFinding).nodes); if (matchMedia('(max-width:900px)').matches) closeDrawers(); } else fit(); return; }
   const ed = e.target.closest('[data-edit]'); if (ed) return openEditorFor(ed.dataset.edit);
   const go = e.target.closest('[data-goto]'); if (go) return select(go.dataset.goto);
-  const sg = e.target.closest('[data-suggest]'); if (sg) { state.questions.push({ id: uid('q'), text: A.suggested[+sg.dataset.suggest].text, status: 'open', answer: '' }); save(); renderAll(); toast('Question added'); return; }
+  const sg = e.target.closest('[data-suggest]'); if (sg) { state.questions.push({ id: uid('q'), text: A.suggested[+sg.dataset.suggest].text, status: 'open', answer: '', source: '', confidence: 'reported' }); save(); renderAll(); toast('Question added'); return; }
   if (e.target.closest('[data-act="replay"]')) return replayTrail();
   if (e.target.closest('[data-act="clear"]')) return clearSel();
   const aa = e.target.closest('[data-add-acc]'); if (aa) return editAccount(null, personName(aa.dataset.addAcc));
   const ask = e.target.closest('[data-ask]'); if (ask) return editQuestion(null, `${A.nameOf(ask.dataset.ask)}: `);
-  if (e.target.id === 'q-add-btn') { const t = $('#q-new').value.trim(); if (!t) { toast('Write the question first'); return; } state.questions.push({ id: uid('q'), text: t, status: 'open', answer: '' }); save(); renderAll(); toast('Question added'); }
+  if (e.target.id === 'q-add-btn') { const t = $('#q-new').value.trim(); if (!t) { toast('Write the question first'); return; } state.questions.push({ id: uid('q'), text: t, status: 'open', answer: '', source: '', confidence: 'reported' }); save(); renderAll(); toast('Question added'); }
 }
 $('#right-body').addEventListener('click', onRailAction);
 $('#focus-banner').addEventListener('click', onRailAction);
