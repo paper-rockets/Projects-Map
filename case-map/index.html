@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Case Map</title>
+<meta name="description" content="Link analysis map for alleged fraud and scam victims: people, accounts, transactions, notes and open questions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --paper:#f3f5f8; --canvas:#eef1f5; --surface:#ffffff; --surface-2:#f7f8fb; --sunken:#e8ecf2;
+  --line:#d9dfe8; --line-strong:#c3ccd8; --grid:#d5dbe4;
+  --ink:#172235; --ink-2:#3d4a60; --muted:#667389; --faint:#8d98aa;
+  --accent:#0f6e76; --accent-ink:#ffffff; --accent-soft:#dff0f1;
+  --victim:#2863c7; --victim-soft:#e4edfb;
+  --fraud:#c0392f; --fraud-soft:#fbe8e6;
+  --account:#55657d; --account-soft:#eaeef3;
+  --money:#17845a; --money-soft:#e1f3ea;
+  --question:#b27806; --question-soft:#fcf1d9;
+  --note:#6a57a6; --note-soft:#eeeaf8;
+  --shared:#a23d8c;
+  --shadow:0 1px 2px rgba(23,34,53,.06),0 4px 14px rgba(23,34,53,.07);
+  --shadow-lg:0 18px 50px rgba(23,34,53,.18);
+  --r:10px;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#10151d; --canvas:#0d1219; --surface:#18202b; --surface-2:#1c2531; --sunken:#121922;
+    --line:#2a3544; --line-strong:#3a4758; --grid:#243040;
+    --ink:#e8edf4; --ink-2:#c3ccd9; --muted:#8e9bb0; --faint:#6b778a;
+    --accent:#3fb3bc; --accent-ink:#06181a; --accent-soft:#16333a;
+    --victim:#6ea0f5; --victim-soft:#1a2a45;
+    --fraud:#f0776c; --fraud-soft:#3a1d1c;
+    --account:#9aa9bf; --account-soft:#222c3a;
+    --money:#4cc590; --money-soft:#133126;
+    --question:#e9b243; --question-soft:#382c12;
+    --note:#a996e6; --note-soft:#2a2442;
+    --shared:#e27ccb;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+    --shadow-lg:0 18px 50px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#10151d; --canvas:#0d1219; --surface:#18202b; --surface-2:#1c2531; --sunken:#121922;
+  --line:#2a3544; --line-strong:#3a4758; --grid:#243040;
+  --ink:#e8edf4; --ink-2:#c3ccd9; --muted:#8e9bb0; --faint:#6b778a;
+  --accent:#3fb3bc; --accent-ink:#06181a; --accent-soft:#16333a;
+  --victim:#6ea0f5; --victim-soft:#1a2a45;
+  --fraud:#f0776c; --fraud-soft:#3a1d1c;
+  --account:#9aa9bf; --account-soft:#222c3a;
+  --money:#4cc590; --money-soft:#133126;
+  --question:#e9b243; --question-soft:#382c12;
+  --note:#a996e6; --note-soft:#2a2442;
+  --shared:#e27ccb;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+  --shadow-lg:0 18px 50px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- App frame ---------- */
+.app{height:100%;display:grid;grid-template-rows:auto 1fr;grid-template-columns:320px 1fr 340px;grid-template-areas:"top top top" "left main right"}
+.topbar{grid-area:top;display:flex;align-items:center;gap:16px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line);min-width:0}
+.case-id{display:flex;flex-direction:column;min-width:0;flex:1 1 280px;max-width:460px}
+.case-eyebrow{font:600 10.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.case-title{font-size:17px;font-weight:700;letter-spacing:-.01em;border:0;background:transparent;padding:2px 0 0;min-width:0;width:100%;outline:0;text-overflow:ellipsis}
+.case-title:focus{box-shadow:0 1px 0 var(--accent)}
+.kpis{display:flex;gap:2px;margin-left:auto;min-width:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.kpi{display:flex;flex-direction:column;align-items:flex-start;padding:4px 12px;border-left:1px solid var(--line);white-space:nowrap}
+.kpi b{font:600 16px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.kpi span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.kpi.loss b{color:var(--fraud)}
+.kpi.q b{color:var(--question)}
+.top-actions{display:flex;gap:6px;align-items:center}
+
+.btn{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600;white-space:nowrap}
+.btn:hover{border-color:var(--line-strong);color:var(--ink);background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:var(--sunken)}
+.btn.small{min-height:26px;padding:0 9px;font-size:11.5px}
+.btn.danger{color:var(--fraud)}
+.btn.danger.armed{background:var(--fraud);border-color:var(--fraud);color:#fff}
+.btn svg,.icon-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.icon-btn{display:inline-grid;place-items:center;width:32px;height:32px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted)}
+.icon-btn:hover{background:var(--sunken);color:var(--ink)}
+
+/* ---------- Side panels ---------- */
+.panel{background:var(--surface);display:flex;flex-direction:column;min-height:0;min-width:0}
+.panel.left{grid-area:left;border-right:1px solid var(--line)}
+.panel.right{grid-area:right;border-left:1px solid var(--line)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px 10px}
+.panel-head h2{margin:0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel-scroll{overflow-y:auto;flex:1;min-height:0;padding:0 12px 16px}
+.privacy{margin:0 16px 10px;padding:8px 10px;border-radius:8px;background:var(--sunken);color:var(--muted);font-size:11.5px;display:flex;gap:8px;align-items:flex-start}
+.privacy svg{width:14px;height:14px;flex:none;margin-top:2px;fill:none;stroke:currentColor;stroke-width:2}
+
+.section{border-top:1px solid var(--line);padding:10px 4px 8px}
+.section:first-child{border-top:0}
+.section-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.section-head h3{margin:0;font-size:13px;font-weight:650;flex:1;display:flex;align-items:center;gap:8px}
+.count{font:600 11px/1 var(--mono);color:var(--muted);background:var(--sunken);border-radius:10px;padding:3px 7px}
+.dot{width:9px;height:9px;border-radius:3px;flex:none;background:var(--c,var(--account))}
+.rows{display:flex;flex-direction:column;gap:2px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 8px;border-radius:7px;border:1px solid transparent;background:transparent;text-align:left;width:100%}
+.row:hover{background:var(--surface-2);border-color:var(--line)}
+.row.active{background:var(--accent-soft);border-color:transparent}
+.row-main{min-width:0}
+.row-title{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-sub{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-end{font:500 11.5px var(--mono);color:var(--ink-2);text-align:right;white-space:nowrap}
+.row-end.money{color:var(--money)}
+.empty-row{font-size:12px;color:var(--faint);padding:4px 8px 6px}
+.status-pill{font:600 10px/1 var(--sans);text-transform:uppercase;letter-spacing:.06em;padding:4px 6px;border-radius:5px}
+.status-open{background:var(--question-soft);color:var(--question)}
+.status-answered{background:var(--money-soft);color:var(--money)}
+
+/* ---------- Main / map ---------- */
+.main{grid-area:main;position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--canvas)}
+.mapbar{position:absolute;z-index:5;left:12px;right:12px;top:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;pointer-events:none;flex-wrap:wrap}
+.mapbar>*{pointer-events:auto}
+.seg{display:inline-flex;padding:3px;border-radius:9px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.seg button{border:0;background:transparent;border-radius:6px;padding:5px 12px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--ink);color:var(--surface)}
+.layers{display:flex;gap:4px;padding:4px;border-radius:9px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);flex-wrap:wrap}
+.layer{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:6px;background:transparent;padding:4px 8px;font-size:11.5px;font-weight:600;color:var(--ink-2)}
+.layer i{width:16px;height:0;border-top:2.5px solid var(--c);display:inline-block}
+.layer i.dash{border-top-style:dashed}
+.layer i.dot{border-top-style:dotted;border-top-width:3px}
+.layer[aria-pressed="false"]{color:var(--faint)}
+.layer[aria-pressed="false"] i{opacity:.3}
+.layer:hover{background:var(--sunken)}
+.mapzoom{position:absolute;z-index:5;right:12px;bottom:12px;display:flex;flex-direction:column;gap:2px;padding:3px;border-radius:9px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.legend{position:absolute;z-index:5;left:12px;bottom:12px;display:flex;gap:12px;flex-wrap:wrap;padding:7px 10px;border-radius:9px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);font-size:11.5px;color:var(--ink-2);max-width:calc(100% - 80px)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+.viewport{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none;background-image:radial-gradient(circle,var(--grid) 1px,transparent 1.3px);background-size:24px 24px}
+.viewport.panning{cursor:grabbing}
+.world{position:absolute;left:0;top:0;transform-origin:0 0}
+.edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.edge{fill:none;stroke-width:2;transition:opacity .15s}
+.edge.money{stroke:var(--money);stroke-width:2.4}
+.edge.owns{stroke:var(--account);stroke-width:1.5;opacity:.7}
+.edge.shared{stroke:var(--shared);stroke-dasharray:6 5;stroke-width:2}
+.edge.mention{stroke:var(--note);stroke-dasharray:2 5;stroke-width:1.6;stroke-linecap:round;opacity:.55}
+.edge.mention.q{stroke:var(--question)}
+.edge-hit{fill:none;stroke:transparent;stroke-width:14;pointer-events:stroke;cursor:pointer}
+.labels{position:absolute;left:0;top:0}
+.elabel{position:absolute;transform:translate(-50%,-50%);padding:2px 7px;border-radius:6px;font:600 12px/1.3 var(--mono);white-space:nowrap;background:var(--surface);border:1px solid var(--line);color:var(--ink-2);box-shadow:0 1px 3px rgba(0,0,0,.08);transition:opacity .15s;pointer-events:none;text-align:center}
+.elabel.money{color:var(--money);border-color:color-mix(in srgb,var(--money) 40%,var(--line))}
+.elabel.money small{display:block;font:500 10px/1.2 var(--sans);color:var(--muted)}
+.elabel.shared{color:var(--shared);border-color:color-mix(in srgb,var(--shared) 40%,var(--line));font-family:var(--sans);font-size:10.5px}
+.arrowhead{fill:var(--money)}
+
+.node{position:absolute;width:210px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);cursor:pointer;user-select:none;touch-action:none;transition:opacity .15s,box-shadow .15s,border-color .15s}
+.node:hover{border-color:var(--line-strong)}
+.node.sel{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent),var(--shadow)}
+.node-top{display:flex;align-items:center;gap:6px;padding:8px 10px 0}
+.tag{font:700 10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;padding:4px 6px;border-radius:4px;background:var(--soft);color:var(--c)}
+.node-flags{margin-left:auto;display:flex;gap:4px}
+.flag{font:600 10px/1 var(--mono);padding:3px 5px;border-radius:4px}
+.flag.q{background:var(--question-soft);color:var(--question)}
+.flag.n{background:var(--note-soft);color:var(--note)}
+.flag.hot{background:var(--fraud-soft);color:var(--fraud)}
+.node-body{padding:5px 10px 9px}
+.node-title{font-size:15px;font-weight:650;line-height:1.25;overflow-wrap:anywhere}
+.node-sub{font-size:12.5px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+.node-num{font:500 13px var(--mono);color:var(--ink-2);margin-top:3px}
+.node-foot{display:flex;justify-content:space-between;gap:8px;padding:6px 10px;border-top:1px solid var(--line);font:500 12px var(--mono);color:var(--muted)}
+.node-foot .in{color:var(--money)}
+.node-foot .out{color:var(--fraud)}
+.node.k-victim{--c:var(--victim);--soft:var(--victim-soft);border-left:3px solid var(--victim)}
+.node.k-suspect{--c:var(--fraud);--soft:var(--fraud-soft);border-left:3px solid var(--fraud)}
+.node.k-other{--c:var(--ink-2);--soft:var(--sunken);border-left:3px solid var(--ink-2)}
+.node.k-account{--c:var(--account);--soft:var(--account-soft)}
+.node.k-note{--c:var(--note);--soft:var(--note-soft);width:230px;background:var(--surface-2)}
+.node.k-question{--c:var(--question);--soft:var(--question-soft);width:230px;background:var(--surface-2);border-style:dashed;border-color:color-mix(in srgb,var(--question) 55%,var(--line))}
+.node.k-question.answered{border-style:solid;border-color:var(--line)}
+.node.k-note .node-title,.node.k-question .node-title{font-size:13px;font-weight:500;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.node.k-account.unknown{border-style:dashed}
+.lane-label{position:absolute;font:700 12px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
+.lane-rule{position:absolute;height:0;border-top:1px dashed var(--line-strong)}
+.dim .node:not(.hl),.dim .elabel:not(.hl){opacity:.18}
+.dim .edge:not(.hl){opacity:.07}
+.map-empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--muted);pointer-events:none;padding:24px}
+.map-empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
+
+/* ---------- Timeline view ---------- */
+.timeline{position:absolute;inset:0;overflow-y:auto;padding:64px 24px 32px}
+.tl-inner{max-width:860px;margin:0 auto}
+.tl-month{font:700 11px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:22px 0 8px;display:flex;align-items:center;gap:10px}
+.tl-month::after{content:"";flex:1;border-top:1px solid var(--line)}
+.tl-item{display:grid;grid-template-columns:92px 14px 1fr auto;gap:12px;align-items:start;padding:10px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--line);margin-bottom:6px}
+.tl-date{font:500 12px var(--mono);color:var(--ink-2);padding-top:1px}
+.tl-mark{width:10px;height:10px;border-radius:50%;margin-top:4px;background:var(--c)}
+.tl-what{font-size:13px;font-weight:600;min-width:0;overflow-wrap:anywhere}
+.tl-what small{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:2px}
+.tl-amt{font:600 13px var(--mono);color:var(--money);text-align:right;white-space:nowrap}
+.tl-amt small{display:block;font:500 10.5px var(--sans);color:var(--muted)}
+
+/* ---------- Right panel: findings ---------- */
+.tabs{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--line)}
+.tab{border:0;background:transparent;padding:10px 10px 9px;font-size:12.5px;font-weight:650;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;display:inline-flex;gap:6px;align-items:center}
+.tab.on{color:var(--ink);border-bottom-color:var(--accent)}
+.finding{display:block;width:100%;text-align:left;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:10px 12px 10px 14px;margin-top:8px;position:relative;overflow:hidden}
+.finding::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--sev)}
+.finding:hover{border-color:var(--line-strong);background:var(--surface-2)}
+.finding.on{border-color:var(--accent);background:var(--accent-soft)}
+.finding.high{--sev:var(--fraud)}
+.finding.med{--sev:var(--question)}
+.finding.info{--sev:var(--account)}
+.f-head{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.sev{font:700 9.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--sev)}
+.f-kind{font-size:10.5px;color:var(--faint);margin-left:auto;font-weight:600}
+.f-title{font-size:13px;font-weight:650;line-height:1.3}
+.f-text{font-size:12px;color:var(--ink-2);margin-top:3px}
+.f-text .mono{font-size:11.5px}
+.sub-h{font:700 10.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 4px 2px;display:flex;align-items:center;gap:8px}
+.q-card{border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:10px 12px;margin-top:8px}
+.q-card.suggested{border-style:dashed;background:var(--surface-2)}
+.q-text{font-size:13px;font-weight:550;line-height:1.35}
+.q-meta{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.q-answer{font-size:12px;color:var(--ink-2);margin-top:6px;padding:6px 8px;border-radius:6px;background:var(--money-soft)}
+.q-add{display:flex;gap:6px;margin-top:8px}
+.q-add textarea{flex:1;min-height:38px;resize:vertical}
+.detail-card{padding:4px 4px 0}
+.detail-card h3{margin:6px 0 2px;font-size:16px}
+.kv{display:grid;grid-template-columns:96px 1fr;gap:4px 10px;font-size:12.5px;margin:10px 0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;overflow-wrap:anywhere}
+.conn{display:flex;gap:8px;align-items:flex-start;padding:7px 4px;border-top:1px solid var(--line);font-size:12.5px}
+.conn i{width:16px;margin-top:8px;border-top:2.5px solid var(--c);flex:none}
+.conn i.dash{border-top-style:dashed}
+.conn i.dot{border-top-style:dotted;border-top-width:3px}
+.conn small{display:block;color:var(--muted);font-size:11.5px}
+.conn button{border:0;background:none;padding:0;font-weight:650;color:var(--ink);text-align:left}
+.conn button:hover{color:var(--accent);text-decoration:underline}
+.muted{color:var(--muted)}
+
+/* ---------- Dialog / forms ---------- */
+dialog{border:1px solid var(--line);border-radius:14px;padding:0;background:var(--surface);color:var(--ink);box-shadow:var(--shadow-lg);width:min(520px,calc(100vw - 32px));max-height:calc(100% - 32px)}
+dialog::backdrop{background:rgba(12,18,28,.45)}
+.dlg{display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
+.dlg-head{display:flex;align-items:center;gap:10px;padding:16px 18px 6px}
+.dlg-head h2{margin:0;font-size:16px;flex:1}
+.dlg-body{padding:6px 18px 8px;overflow-y:auto}
+.dlg-foot{display:flex;gap:8px;align-items:center;padding:12px 18px 16px;border-top:1px solid var(--line)}
+.dlg-foot .spacer{flex:1}
+.field{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.field label{font-size:11.5px;font-weight:650;color:var(--ink-2)}
+.field .hint{font-size:11px;color:var(--faint)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.input,select.input,textarea.input{width:100%;min-height:36px;padding:7px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:13px;outline:0}
+textarea.input{min-height:72px;resize:vertical;line-height:1.45}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent)}
+.input.mono{font-family:var(--mono)}
+.choice{display:flex;gap:6px;flex-wrap:wrap}
+.choice button{border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.choice button.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.paste-preview{margin-top:10px;overflow-x:auto;border:1px solid var(--line);border-radius:8px;max-height:200px}
+.paste-preview table{border-collapse:collapse;width:100%;font-size:11.5px}
+.paste-preview th,.paste-preview td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.paste-preview th{position:sticky;top:0;background:var(--surface-2);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em}
+.menu{position:absolute;z-index:30;min-width:220px;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:var(--shadow-lg)}
+.menu button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:transparent;border-radius:6px;padding:8px 10px;font-size:12.5px;text-align:left;color:var(--ink)}
+.menu button:hover{background:var(--sunken)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:5px 2px}
+.toast{position:fixed;z-index:60;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,10px);opacity:0;padding:9px 14px;border-radius:9px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:600;transition:opacity .15s,transform .2s;pointer-events:none;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.mobile-tabs{display:none}
+.app.focus{grid-template-columns:0 1fr 0}
+.app.focus .panel{visibility:hidden;border:0}
+.map-right{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;justify-content:flex-end}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1180px){
+  .app{grid-template-columns:290px 1fr 310px}
+  .kpi.hide-md{display:none}
+}
+@media (max-width:920px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 1fr auto;grid-template-areas:"top" "main" "tabs"}
+  .panel.left,.panel.right{position:fixed;z-index:20;top:0;bottom:0;width:min(380px,92vw);box-shadow:var(--shadow-lg);transition:transform .22s ease;padding-top:env(safe-area-inset-top,0px)}
+  .panel.left{left:0;transform:translateX(-102%)}
+  .panel.right{right:0;transform:translateX(102%)}
+  .panel.open{transform:none}
+  .scrim{position:fixed;inset:0;z-index:15;background:rgba(12,18,28,.4)}
+  .mobile-tabs{grid-area:tabs;display:flex;gap:6px;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line)}
+  .mobile-tabs .btn{flex:1;justify-content:center}
+  .kpis{display:none}
+  .top-actions .hide-sm{display:none}
+  .legend{display:none}
+  .layers{flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none}
+  .layer{white-space:nowrap}
+  #btn-focus{display:none}
+  .map-right{flex-wrap:nowrap;max-width:100%}
+  .panel .close-drawer{display:inline-grid!important}
+}
+@media (min-width:921px){.scrim{display:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker>
+  </defs>
+</svg>
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="case-id">
+      <span class="case-eyebrow" id="case-ref">CASE-0000</span>
+      <input class="case-title" id="case-title" aria-label="Case title" spellcheck="false">
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="top-actions">
+      <button class="btn hide-sm" id="btn-paste" type="button" title="Paste many transactions at once">
+        <svg viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M8 12h8M8 16h5"/></svg>Paste data</button>
+      <button class="btn" id="btn-case" type="button" aria-haspopup="true">
+        <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Case file</button>
+      <button class="icon-btn" id="btn-theme" type="button" title="Switch light / dark" aria-label="Switch light or dark theme">
+        <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    </div>
+  </header>
+
+  <aside class="panel left" id="panel-left" aria-label="Case data">
+    <div class="panel-head">
+      <h2>Case data</h2>
+      <button class="icon-btn close-drawer" type="button" data-close-drawer style="display:none" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="privacy"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Saved only in this browser on this device. Nothing is uploaded.</span></div>
+    <div class="panel-scroll" id="data-list"></div>
+  </aside>
+
+  <main class="main">
+    <div class="mapbar">
+      <div class="seg" role="tablist" aria-label="View">
+        <button type="button" class="on" data-view="map" role="tab">Map</button>
+        <button type="button" data-view="timeline" role="tab">Timeline</button>
+      </div>
+      <div class="map-right">
+      <div class="layers" id="layers" aria-label="Show on map">
+        <button type="button" class="layer" data-layer="money" aria-pressed="true" style="--c:var(--money)"><i></i>Money flow</button>
+        <button type="button" class="layer" data-layer="owns" aria-pressed="true" style="--c:var(--account)"><i></i>Holds account</button>
+        <button type="button" class="layer" data-layer="shared" aria-pressed="true" style="--c:var(--shared)"><i class="dash"></i>Shared detail</button>
+        <button type="button" class="layer" data-layer="mention" aria-pressed="true" style="--c:var(--note)"><i class="dot"></i>Notes &amp; questions</button>
+      </div>
+      <button class="btn" type="button" id="btn-focus" title="Hide the side panels to give the map the whole screen" style="box-shadow:var(--shadow)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span>Focus map</span></button>
+      </div>
+    </div>
+
+    <div class="viewport" id="viewport">
+      <div class="world" id="world">
+        <svg class="edges" id="edges" width="10" height="10"></svg>
+        <div class="labels" id="lanes"></div>
+        <div class="labels" id="nodes"></div>
+        <div class="labels" id="elabels"></div>
+      </div>
+      <div class="map-empty" id="map-empty" hidden><div><b>Nothing on the map yet</b>Add a victim, an account or a transaction on the left.<br>Links are found and drawn automatically.</div></div>
+    </div>
+    <div class="timeline" id="timeline" hidden><div class="tl-inner" id="tl-inner"></div></div>
+
+    <div class="legend" id="legend">
+      <span><i class="dot" style="--c:var(--victim)"></i>Victim</span>
+      <span><i class="dot" style="--c:var(--fraud)"></i>Alleged fraudster</span>
+      <span><i class="dot" style="--c:var(--account)"></i>Account</span>
+      <span><i class="dot" style="--c:var(--note)"></i>Note</span>
+      <span><i class="dot" style="--c:var(--question)"></i>Open question</span>
+    </div>
+    <div class="mapzoom">
+      <button class="icon-btn" id="zoom-in" type="button" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="icon-btn" id="zoom-out" type="button" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      <button class="icon-btn" id="zoom-fit" type="button" aria-label="Fit map to screen" title="Fit to screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      <button class="icon-btn" id="tidy" type="button" aria-label="Tidy layout" title="Tidy layout (undo manual moves)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="6" height="5" rx="1"/><rect x="15" y="4" width="6" height="5" rx="1"/><rect x="15" y="15" width="6" height="5" rx="1"/><path d="M9 6.5h6M18 9v6"/></svg></button>
+    </div>
+  </main>
+
+  <aside class="panel right" id="panel-right" aria-label="Findings and questions">
+    <div class="tabs" role="tablist">
+      <button class="tab on" type="button" data-rtab="findings">Findings <span class="count" id="count-findings">0</span></button>
+      <button class="tab" type="button" data-rtab="questions">Questions <span class="count" id="count-questions">0</span></button>
+      <button class="tab" type="button" data-rtab="detail">Selected</button>
+      <button class="icon-btn close-drawer" type="button" data-close-drawer style="display:none;margin:4px 0 0 auto" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="panel-scroll" id="right-body" style="padding-top:4px"></div>
+  </aside>
+
+  <nav class="mobile-tabs">
+    <button class="btn" type="button" data-open-drawer="panel-left">Case data</button>
+    <button class="btn primary" type="button" id="m-add">+ Add</button>
+    <button class="btn" type="button" data-open-drawer="panel-right">Findings</button>
+  </nav>
+</div>
+<div class="scrim" id="scrim" hidden></div>
+
+<dialog id="dlg"><form class="dlg" id="dlg-form" method="dialog">
+  <div class="dlg-head"><h2 id="dlg-title">Add</h2><button class="icon-btn" type="button" data-dlg-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="dlg-body" id="dlg-body"></div>
+  <div class="dlg-foot"><button class="btn danger" type="button" id="dlg-delete" hidden>Delete</button><span class="spacer"></span><button class="btn" type="button" data-dlg-close>Cancel</button><button class="btn primary" type="submit" id="dlg-save">Save</button></div>
+</form></dialog>
+
+<div class="menu" id="case-menu" hidden>
+  <button type="button" data-act="export"><svg class="i" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Download case file (.json)</button>
+  <button type="button" data-act="copy"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copy case file to clipboard</button>
+  <button type="button" data-act="import"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg>Open a case file…</button>
+  <button type="button" data-act="paste"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M8 12h8M8 16h5M6 4h12v16H6z"/></svg>Paste transactions…</button>
+  <hr>
+  <button type="button" data-act="settings"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="3"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2"/></svg>Case details &amp; currency…</button>
+  <button type="button" data-act="sample"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 4h16v16H4zM4 10h16"/></svg>Load example case</button>
+  <button type="button" data-act="new"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg>Start a new empty case</button>
+</div>
+<input type="file" id="file-in" accept=".json,application/json" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+'use strict';
+const STORE = 'case-map-v1';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = p => p + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3);
+const norm = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const normName = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+const digits = s => String(s ?? '').replace(/\D/g, '');
+
+function parseAmount(v) {
+  if (typeof v === 'number') return v;
+  let s = String(v ?? '').trim().toLowerCase().replace(/,/g, '');
+  let mult = 1;
+  if (/\dk\b/.test(s)) mult = 1e3;
+  if (/\dm\b/.test(s)) mult = 1e6;
+  const m = s.match(/-?\d+(\.\d+)?/);
+  return m ? Math.round(parseFloat(m[0]) * mult * 100) / 100 : 0;
+}
+function parseDate(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return '';
+  let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/); // day first (UK / EU style)
+  if (m) { const y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; }
+  const d = new Date(s);
+  return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+}
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(iso, withYear = true) {
+  if (!iso) return 'No date';
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${d} ${MONTHS[m - 1]}${withYear ? ' ' + y : ''}`;
+}
+const dayDiff = (a, b) => (Date.parse(b) - Date.parse(a)) / 864e5;
+function money(n, compact = false) {
+  const cur = state?.meta?.currency || 'GBP';
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur, maximumFractionDigits: compact && Math.abs(n) >= 1e4 ? 0 : (n % 1 ? 2 : 0), notation: compact && Math.abs(n) >= 1e6 ? 'compact' : 'standard' }).format(n);
+  } catch (_) { return cur + ' ' + n.toLocaleString(); }
+}
+function maskNum(num) {
+  const s = String(num ?? '').trim();
+  if (!s) return '';
+  const d = s.replace(/\s/g, '');
+  return d.length > 8 ? '•• ' + d.slice(-4) : s;
+}
+
+const ROLE = { victim: 'Victim', suspect: 'Alleged fraudster', other: 'Other party' };
+const ACC_TYPE = { bank: 'Bank account', business: 'Business account', card: 'Card', payment: 'Payment app / e-money', crypto: 'Crypto wallet', other: 'Other' };
+
+function exampleCase() {
+  return {
+    meta: { title: 'Veltrix Capital investment scam', ref: 'CASE-2026-0147', currency: 'GBP', analyst: '' },
+    people: [
+      { id: 'p1', role: 'victim', name: 'Margaret Holloway', aliases: '', phone: '07700 900412', email: '', notes: 'Met “David” on a dating app in Nov 2025. Persuaded to invest in a crypto trading platform called Veltrix Capital.' },
+      { id: 'p2', role: 'victim', name: 'Daniel Osei', aliases: '', phone: '', email: 'd.osei@example.com', notes: 'Cold-called by a Veltrix Capital “account manager”. Calls came from +44 7700 900981.' },
+      { id: 'p3', role: 'victim', name: 'Priya Nair', aliases: '', phone: '', email: '', notes: 'Answered an Instagram advert for Veltrix Capital. Adviser messaged her on WhatsApp from +44 7700 900981.' },
+      { id: 's1', role: 'suspect', name: 'David Mercer', aliases: 'Dave M, D. Mercer', phone: '+44 7700 900981', email: 'd.mercer@veltrix-capital.example', notes: 'Name used on the dating profile and as the Veltrix “account manager”. Probably a false identity.' },
+      { id: 's2', role: 'suspect', name: 'Kestrel Trading Ltd', aliases: 'Kestrel Trading', phone: '', email: '', notes: 'Named on the invoices sent to victims. Incorporated three months before the first payment.' },
+      { id: 'o1', role: 'other', name: 'Jamal Price', aliases: 'J Price', phone: '', email: '', notes: 'Account holder at Monzo. Student, 19. Possible money mule.' }
+    ],
+    accounts: [
+      { id: 'a1', holder: 'Margaret Holloway', institution: 'Barclays', number: '20-45-77 43891022', type: 'bank', notes: '' },
+      { id: 'a2', holder: 'Daniel Osei', institution: 'HSBC', number: '40-11-62 71550934', type: 'bank', notes: '' },
+      { id: 'a3', holder: 'Priya Nair', institution: 'Nationwide', number: '07-01-16 22190456', type: 'bank', notes: '' },
+      { id: 'a4', holder: 'Kestrel Trading Ltd', institution: 'Metro Bank', number: '23-05-80 60447123', type: 'business', notes: 'Opened Sept 2025.' },
+      { id: 'a5', holder: 'Jamal Price', institution: 'Monzo', number: '04-00-04 11873360', type: 'bank', notes: '' },
+      { id: 'a6', holder: '', institution: 'Revolut', number: 'GB29 REVO 0099 6912 3456 78', type: 'payment', notes: 'Holder not yet confirmed.' },
+      { id: 'a7', holder: '', institution: 'Bitcoin wallet', number: 'bc1q9h7k3xy2lm4tq8f0w6ze', type: 'crypto', notes: 'Wallet address sent by David Mercer over WhatsApp.' }
+    ],
+    transactions: [
+      { id: 't1', date: '2025-11-28', from: 'a1', to: 'a4', amount: 4500, method: 'Faster Payment', reference: 'VELTRIX INV 0192', notes: 'First “investment”.' },
+      { id: 't2', date: '2025-12-12', from: 'a1', to: 'a4', amount: 18000, method: 'CHAPS', reference: 'VELTRIX TOPUP', notes: '' },
+      { id: 't3', date: '2025-12-14', from: 'a4', to: 'a5', amount: 17500, method: 'Faster Payment', reference: 'CONSULTANCY', notes: '' },
+      { id: 't4', date: '2026-01-06', from: 'a2', to: 'a5', amount: 9800, method: 'Faster Payment', reference: 'DEPOSIT VX', notes: '' },
+      { id: 't5', date: '2026-01-07', from: 'a5', to: 'a6', amount: 26900, method: 'Faster Payment', reference: 'JP', notes: '' },
+      { id: 't6', date: '2026-01-20', from: 'a3', to: 'a4', amount: 12250, method: 'Faster Payment', reference: 'VELTRIX 3381', notes: '' },
+      { id: 't7', date: '2026-01-21', from: 'a4', to: 'a6', amount: 12000, method: 'Faster Payment', reference: 'INVOICE 55', notes: '' },
+      { id: 't8', date: '2026-01-22', from: 'a6', to: 'a7', amount: 38400, method: 'Crypto purchase', reference: 'BTC', notes: 'Converted and sent to wallet.' },
+      { id: 't9', date: '2026-02-03', from: 'a1', to: 'a5', amount: 6000, method: 'Faster Payment', reference: 'WITHDRAWAL FEE', notes: 'Asked to pay a fee to release “profits”.' }
+    ],
+    notes: [
+      { id: 'n1', date: '2026-01-09', text: 'Monzo gave a partial Confirmation of Payee match on the account ending 3360. Name returned: “J Price”.' },
+      { id: 'n2', date: '2026-02-05', text: 'Margaret Holloway was told to pay a £6,000 “withdrawal fee” before profits could be released. David Mercer pressed her by phone. Typical advance-fee pattern.' },
+      { id: 'n3', date: '2026-02-10', text: 'The number +44 7700 900981 appears in both victim statements from Daniel Osei and Priya Nair.' }
+    ],
+    questions: [
+      { id: 'q1', text: 'Who controls the Revolut account GB29 REVO 0099 6912 3456 78?', status: 'open', answer: '' },
+      { id: 'q2', text: 'Is Jamal Price a knowing participant, or was he recruited as a money mule?', status: 'open', answer: '' },
+      { id: 'q3', text: 'Did Kestrel Trading Ltd ever trade, or is it a front company?', status: 'answered', answer: 'Companies House: no filed accounts, one dormant director. Treat as a front company.' }
+    ],
+    pos: {}
+  };
+}
+function emptyCase() {
+  return { meta: { title: 'Untitled case', ref: 'CASE-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000), currency: 'GBP', analyst: '' }, people: [], accounts: [], transactions: [], notes: [], questions: [], pos: {} };
+}
+function sanitize(c) {
+  const base = emptyCase();
+  if (!c || typeof c !== 'object') return base;
+  for (const k of ['people', 'accounts', 'transactions', 'notes', 'questions']) base[k] = Array.isArray(c[k]) ? c[k].filter(x => x && typeof x === 'object').map(x => ({ ...x, id: x.id || uid(k[0]) })) : [];
+  base.meta = { ...base.meta, ...(c.meta || {}) };
+  base.pos = c.pos && typeof c.pos === 'object' ? c.pos : {};
+  base.transactions.forEach(t => { t.amount = parseAmount(t.amount); t.date = parseDate(t.date) || ''; });
+  return base;
+}
+
+let state;
+try { const raw = localStorage.getItem(STORE); state = raw ? sanitize(JSON.parse(raw)) : exampleCase(); } catch (_) { state = exampleCase(); }
+function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (_) {} }
+
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
+
+/* =====================================================================
+   Link analysis. Every link carries a plain-language reason (`why`),
+   so the map never shows a connection without saying where it came from.
+   ===================================================================== */
+const byDate = (a, b) => (a.date || '9999').localeCompare(b.date || '9999');
+function accLabel(a) { return a ? `${a.institution || ACC_TYPE[a.type] || 'Account'} ${maskNum(a.number)}`.trim() : 'Unknown account'; }
+
+const RE_EMAIL = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi;
+const RE_PHONE = /(?:\+|\b0)\d[\d\s().-]{7,16}\d/g;
+const RE_WALLET = /\b(bc1[a-z0-9]{14,}|[13][a-km-zA-HJ-NP-Z1-9]{25,34}|0x[a-fA-F0-9]{40}|T[1-9A-HJ-NP-Za-km-z]{33})\b/g;
+const RE_LAST4 = /(?:ending(?:\s+in)?|ends\s+in|last\s+(?:4|four)(?:\s+digits)?|x{2,}|\*{2,}|•+|#)\s*:?\s*(\d{4})\b/gi;
+
+function analyse() {
+  const S = state;
+  const people = S.people, accounts = S.accounts;
+  const accById = new Map(accounts.map(a => [a.id, a]));
+  const personById = new Map(people.map(p => [p.id, p]));
+  const nodes = [], edges = [], findings = [], suggested = [];
+  const nodeMap = new Map();
+  const addNode = (id, kind, ref) => { const n = { id, kind, ref }; nodes.push(n); nodeMap.set(id, n); return n; };
+  const addEdge = e => { e.id = 'e' + edges.length; edges.push(e); return e; };
+  const nameOf = id => personById.get(id)?.name || accLabel(accById.get(id));
+
+  people.forEach(p => addNode(p.id, ROLE[p.role] ? p.role : 'other', p));
+  accounts.forEach(a => addNode(a.id, 'account', a));
+
+  // ---- Name index (full names and aliases only, to avoid false matches)
+  const nameIdx = new Map();
+  people.forEach(p => [p.name, ...String(p.aliases || '').split(/[,;\n]/)].map(normName).filter(n => n.length >= 3)
+    .forEach(n => { if (!nameIdx.has(n)) nameIdx.set(n, p); }));
+  const findNames = text => { const t = ' ' + normName(text) + ' '; const out = new Set(); nameIdx.forEach((p, n) => { if (t.includes(' ' + n + ' ')) out.add(p.id); }); return out; };
+
+  // ---- Ownership
+  const ownerId = new Map();
+  accounts.forEach(a => {
+    const p = nameIdx.get(normName(a.holder));
+    if (p) { ownerId.set(a.id, p.id); addEdge({ type: 'owns', from: p.id, to: a.id, why: `${p.name} is named as the holder of this account.` }); }
+  });
+  const roleOfAcc = id => personById.get(ownerId.get(id))?.role || (accById.get(id)?.holder ? 'named' : 'unknown');
+
+  // ---- Money flows (payments between the same two accounts are combined)
+  const txs = S.transactions.filter(t => accById.has(t.from) && accById.has(t.to) && t.from !== t.to).slice().sort(byDate);
+  const inflow = new Map(), outflow = new Map(), edgeOfTx = new Map();
+  const pairs = new Map();
+  txs.forEach(t => {
+    const k = t.from + '>' + t.to; if (!pairs.has(k)) pairs.set(k, []); pairs.get(k).push(t);
+    inflow.set(t.to, (inflow.get(t.to) || 0) + t.amount);
+    outflow.set(t.from, (outflow.get(t.from) || 0) + t.amount);
+  });
+  pairs.forEach(list => {
+    const total = list.reduce((s, t) => s + t.amount, 0);
+    const dated = list.filter(t => t.date);
+    const sub = list.length > 1
+      ? `${list.length} payments${dated.length ? ' · ' + fmtDate(dated[0].date, false) + ' – ' + fmtDate(dated[dated.length - 1].date, false) : ''}`
+      : (list[0].date ? fmtDate(list[0].date) : 'No date');
+    const e = addEdge({ type: 'money', from: list[0].from, to: list[0].to, total, txs: list, label: money(total, true), sub,
+      why: `${list.length} recorded payment${list.length > 1 ? 's' : ''} totalling ${money(total)}.` });
+    list.forEach(t => edgeOfTx.set(t.id, e));
+  });
+
+  // ---- Victim losses: money leaving a victim's own accounts to someone else
+  const lossBy = new Map();
+  txs.forEach(t => {
+    const from = ownerId.get(t.from), to = ownerId.get(t.to);
+    if (from && personById.get(from).role === 'victim' && from !== to) lossBy.set(from, (lossBy.get(from) || 0) + t.amount);
+  });
+  const totalLoss = [...lossBy.values()].reduce((a, b) => a + b, 0);
+
+  // ---- Identifiers (phones, emails, wallets) and where each one appears
+  const acctDigits = accounts.map(a => digits(a.number)).filter(d => d.length >= 6);
+  function extract(text) {
+    const out = [], s = String(text || '');
+    (s.match(RE_EMAIL) || []).forEach(m => out.push({ key: 'e:' + m.toLowerCase(), label: m, type: 'email' }));
+    (s.match(RE_PHONE) || []).forEach(m => {
+      const d = digits(m);
+      if (d.length < 10 || d.length > 13) return;
+      if (acctDigits.some(a => a.includes(d) || d.includes(a))) return;
+      out.push({ key: 'p:' + d.slice(-10), label: m.trim(), type: 'phone' });
+    });
+    (s.match(RE_WALLET) || []).forEach(m => out.push({ key: 'w:' + m.toLowerCase(), label: m, type: 'wallet' }));
+    return out;
+  }
+  const ident = new Map();
+  const note = (entity, it, owned) => {
+    if (!ident.has(it.key)) ident.set(it.key, { ...it, src: new Map() });
+    const rec = ident.get(it.key);
+    if (owned || it.label.length > rec.label.length && !rec.ownedLabel) { rec.label = it.label; if (owned) rec.ownedLabel = true; }
+    const prev = rec.src.get(entity);
+    rec.src.set(entity, prev || owned);
+  };
+  people.forEach(p => {
+    extract(p.phone).forEach(i => note(p.id, i, true));
+    extract(p.email).forEach(i => note(p.id, i, true));
+    extract(p.notes).forEach(i => note(p.id, i, false));
+  });
+  accounts.forEach(a => {
+    if (a.type === 'crypto' && a.number) note(a.id, { key: 'w:' + String(a.number).trim().toLowerCase(), label: a.number, type: 'wallet' }, true);
+    extract(a.notes).forEach(i => note(a.id, i, false));
+  });
+  const identOwners = key => { const r = ident.get(key); return r ? [...r.src].filter(([, o]) => o).map(([id]) => id) : []; };
+  const TYPE_WORD = { phone: 'phone number', email: 'email address', wallet: 'wallet address' };
+
+  ident.forEach(rec => {
+    const ids = [...rec.src.keys()];
+    if (ids.length < 2) return;
+    const owners = ids.filter(id => rec.src.get(id));
+    const hub = owners[0] || ids[0];
+    const made = [];
+    ids.forEach(id => {
+      if (id === hub) return;
+      made.push(addEdge({ type: 'shared', from: hub, to: id, label: 'Same ' + rec.type, sub: rec.label,
+        why: `The ${TYPE_WORD[rec.type]} ${rec.label} appears in both records.` }));
+    });
+    const victims = ids.filter(id => personById.get(id)?.role === 'victim');
+    const suspects = ids.filter(id => personById.get(id)?.role === 'suspect');
+    findings.push({
+      sev: victims.length >= 2 || (victims.length && suspects.length) ? 'high' : 'med', kind: 'Shared detail',
+      title: `Same ${TYPE_WORD[rec.type]} in ${ids.length} records`,
+      text: `<span class="mono">${esc(rec.label)}</span> appears for ${ids.map(id => '<b>' + esc(nameOf(id)) + '</b>').join(', ')}.` +
+        (victims.length >= 2 ? ' Separate victims were contacted the same way, which points to the same operation.' : ''),
+      nodes: ids, edges: made.map(e => e.id)
+    });
+  });
+
+  // ---- Names mentioned inside other records' notes
+  const refPairs = new Set();
+  [...people.map(p => [p.id, p.notes]), ...accounts.map(a => [a.id, a.notes])].forEach(([id, text]) => {
+    findNames(text).forEach(other => {
+      if (other === id || ownerId.get(id) === other) return;
+      const k = [id, other].sort().join('|'); if (refPairs.has(k)) return; refPairs.add(k);
+      addEdge({ type: 'shared', from: other, to: id, label: 'Named in notes', sub: '', why: `${nameOf(other)} is named in the notes on ${nameOf(id)}.` });
+    });
+  });
+
+  // ---- Notes and questions: link to whatever they mention
+  function mentions(text) {
+    const out = new Map();
+    findNames(text).forEach(id => out.set(id, 'names ' + nameOf(id)));
+    const nt = norm(text);
+    accounts.forEach(a => {
+      const full = norm(a.number);
+      const parts = String(a.number || '').split(/\s+/).map(norm).filter(x => x.length >= 6);
+      if ((full.length >= 6 && nt.includes(full)) || parts.some(x => nt.includes(x))) out.set(a.id, 'quotes the account number');
+    });
+    let m; RE_LAST4.lastIndex = 0;
+    while ((m = RE_LAST4.exec(String(text || '')))) {
+      const hits = accounts.filter(a => digits(a.number).endsWith(m[1]));
+      if (hits.length === 1 && !out.has(hits[0].id)) out.set(hits[0].id, `refers to the account ending ${m[1]}`);
+    }
+    extract(text).forEach(i => {
+      const owners = identOwners(i.key);
+      const targets = owners.length ? owners : [...(ident.get(i.key)?.src.keys() || [])];
+      targets.forEach(id => { if (!out.has(id)) out.set(id, `quotes ${i.label}, which belongs to ${nameOf(id)}`); });
+    });
+    return out;
+  }
+  S.notes.forEach(n => {
+    addNode(n.id, 'note', n);
+    mentions(n.text).forEach((why, id) => addEdge({ type: 'mention', from: n.id, to: id, why: `This note ${why}.` }));
+  });
+  S.questions.forEach(q => {
+    addNode(q.id, 'question', q);
+    mentions(q.text + ' ' + (q.answer || '')).forEach((why, id) => addEdge({ type: 'mention', q: true, from: q.id, to: id, why: `This question ${why}.` }));
+  });
+
+  // ---- Money trail: follow payments forward in date order from each victim
+  const victims = people.filter(p => p.role === 'victim');
+  const reachedBy = new Map();
+  const trails = new Map();
+  victims.forEach(v => {
+    const starts = accounts.filter(a => ownerId.get(a.id) === v.id).map(a => a.id);
+    const arrive = new Map(starts.map(id => [id, '']));
+    const prev = new Map();
+    let changed = true, guard = 0;
+    while (changed && guard++ < accounts.length + 2) {
+      changed = false;
+      for (const t of txs) {
+        if (!arrive.has(t.from) || starts.includes(t.to)) continue;
+        const at = arrive.get(t.from);
+        if (t.date && at && t.date < at) continue;         // money can't leave before it arrived
+        const when = t.date || at;
+        const cur = arrive.get(t.to);
+        if (!arrive.has(t.to) || (when && cur && when < cur)) { arrive.set(t.to, when); prev.set(t.to, t); changed = true; }
+      }
+    }
+    const reached = [...arrive.keys()].filter(id => !starts.includes(id));
+    reached.forEach(id => { if (!reachedBy.has(id)) reachedBy.set(id, new Set()); reachedBy.get(id).add(v.id); });
+    const pathTo = id => { const ids = [], es = []; let cur = id, g = 0; while (prev.has(cur) && g++ < 50) { const t = prev.get(cur); ids.unshift(cur); es.unshift(edgeOfTx.get(t.id).id); cur = t.from; } ids.unshift(cur); return { ids, es }; };
+    trails.set(v.id, { starts, reached, pathTo });
+    if (!reached.length) return;
+    const allE = new Set(), allN = new Set([v.id, ...starts]);
+    reached.forEach(id => { const p = pathTo(id); p.ids.forEach(x => allN.add(x)); p.es.forEach(x => allE.add(x)); });
+    const suspectAccs = reached.filter(id => personById.get(ownerId.get(id))?.role === 'suspect');
+    const ends = reached.filter(id => !txs.some(t => t.from === id));
+    const longest = reached.map(pathTo).sort((a, b) => b.ids.length - a.ids.length)[0];
+    const suspectNames = [...new Set(suspectAccs.map(id => nameOf(ownerId.get(id))))];
+    reached.forEach(id => { const o = ownerId.get(id); if (o) allN.add(o); });
+    findings.push({
+      sev: suspectNames.length ? 'high' : 'med', kind: 'Money trail',
+      title: `${v.name}: money traced through ${reached.length} account${reached.length > 1 ? 's' : ''}`,
+      text: (suspectNames.length ? `Reaches accounts held by <b>${suspectNames.map(esc).join('</b>, <b>')}</b>. ` : '') +
+        `Longest route: ${longest.ids.map(id => esc(ownerId.get(id) && personById.get(ownerId.get(id)).role !== 'victim' ? nameOf(ownerId.get(id)) : nameOf(id))).join(' → ')}.` +
+        (ends.length ? ` Last known stop: <b>${ends.map(id => esc(accLabel(accById.get(id)))).join('</b>, <b>')}</b>.` : ''),
+      nodes: [...allN], edges: [...allE]
+    });
+  });
+
+  // ---- Where victims' money meets
+  const moneyIn = id => txs.filter(t => t.to === id).map(t => t.from);
+  reachedBy.forEach((vs, id) => {
+    if (vs.size < 2) return;
+    // report only where the money first meets, not every stop after it
+    if (moneyIn(id).some(src => { const s2 = reachedBy.get(src); return s2 && [...vs].every(v => s2.has(v)); })) return;
+    const allE = new Set(), allN = new Set([id, ...vs]);
+    vs.forEach(v => { const p = trails.get(v).pathTo(id); p.ids.forEach(x => allN.add(x)); p.es.forEach(x => allE.add(x)); });
+    const holder = ownerId.get(id); if (holder) allN.add(holder);
+    findings.unshift({
+      sev: 'high', kind: 'Common destination',
+      title: `Money from ${vs.size} victims ends up in ${accLabel(accById.get(id))}`,
+      text: `${[...vs].map(v => '<b>' + esc(nameOf(v)) + '</b>').join(', ')} all have money that reaches this account` +
+        (holder ? `, held by <b>${esc(nameOf(holder))}</b>` : ', whose holder is not identified') + `. It received <span class="mono">${money(inflow.get(id) || 0)}</span> in total.`,
+      nodes: [...allN], edges: [...allE]
+    });
+  });
+
+  // ---- Rapid pass-through (money in, most of it out again within 3 days)
+  accounts.forEach(a => {
+    if (personById.get(ownerId.get(a.id))?.role === 'victim') return;
+    const ins = txs.filter(t => t.to === a.id && t.date), outs = txs.filter(t => t.from === a.id && t.date);
+    for (const i of ins) {
+      const o = outs.find(o => o.date >= i.date && dayDiff(i.date, o.date) <= 3 && o.amount >= i.amount * 0.7);
+      if (!o) continue;
+      const d = dayDiff(i.date, o.date);
+      findings.push({ sev: 'med', kind: 'Pass-through',
+        title: `${ownerId.get(a.id) ? nameOf(ownerId.get(a.id)) : accLabel(a)} moved money on within ${d === 0 ? 'the same day' : d === 1 ? '1 day' : d + ' days'}`,
+        text: `Received <span class="mono">${money(i.amount)}</span> on ${fmtDate(i.date)} and sent <span class="mono">${money(o.amount)}</span> (${Math.round(o.amount / i.amount * 100)}%) on ${fmtDate(o.date)}. Quick in-and-out movement is a common layering sign.`,
+        nodes: [a.id, i.from, o.to, ownerId.get(a.id)].filter(Boolean), edges: [edgeOfTx.get(i.id).id, edgeOfTx.get(o.id).id] });
+      break;
+    }
+  });
+
+  // ---- Escalating payments from one victim to the same place
+  pairs.forEach(list => {
+    const v = personById.get(ownerId.get(list[0].from));
+    if (!v || v.role !== 'victim' || list.length < 2) return;
+    const rising = list.every((t, i) => !i || t.amount > list[i - 1].amount);
+    if (!rising) return;
+    const to = list[0].to;
+    findings.push({ sev: 'med', kind: 'Pattern',
+      title: `${v.name}'s payments grew each time`,
+      text: `${list.length} payments to ${esc(ownerId.get(to) ? nameOf(ownerId.get(to)) : accLabel(accById.get(to)))}, rising from <span class="mono">${money(list[0].amount)}</span> to <span class="mono">${money(list[list.length - 1].amount)}</span>. Rising payments are typical of investment scams.`,
+      nodes: [v.id, list[0].from, to], edges: [edgeOfTx.get(list[0].id).id] });
+  });
+
+  // ---- Gaps worth asking about
+  const have = new Set(S.questions.map(q => normName(q.text)));
+  const suggest = (text, nodesArr) => { if (!have.has(normName(text))) suggested.push({ text, nodes: nodesArr }); };
+  accounts.forEach(a => {
+    const inn = inflow.get(a.id) || 0, out = outflow.get(a.id) || 0;
+    if (!ownerId.get(a.id) && inn > 0) {
+      findings.push({ sev: 'med', kind: 'Unknown holder', title: `No holder recorded for ${accLabel(a)}`,
+        text: `It received <span class="mono">${money(inn)}</span>${a.holder ? `. The holder is given as “${esc(a.holder)}”, who is not in the case yet` : ''}.`, nodes: [a.id], edges: [] });
+      { const inst = a.institution || '', word = a.type === 'crypto' ? 'wallet' : 'account'; suggest(`Who controls the ${inst}${inst.toLowerCase().includes(word) ? '' : (inst ? ' ' : '') + word} ${a.number || accLabel(a)}?`, [a.id]); }
+    }
+    if (inn > 0 && out === 0 && roleOfAcc(a.id) !== 'victim') suggest(`Where did the ${money(inn)} received by ${ownerId.get(a.id) ? nameOf(ownerId.get(a.id)) + "'s account" : accLabel(a)} go next?`, [a.id]);
+  });
+  people.forEach(p => {
+    const accs = accounts.filter(a => ownerId.get(a.id) === p.id);
+    if (p.role === 'suspect' && !accs.length) suggest(`Which accounts does ${p.name} control?`, [p.id]);
+    if (p.role === 'other' && accs.some(a => reachedBy.has(a.id))) suggest(`Did ${p.name} know where the money in their account came from?`, [p.id]);
+    if (p.role === 'victim' && !lossBy.get(p.id)) suggest(`Has ${p.name} made payments that are not recorded here yet?`, [p.id]);
+  });
+
+  const order = { high: 0, med: 1, info: 2 };
+  findings.sort((a, b) => order[a.sev] - order[b.sev]);
+  findings.forEach((f, i) => f.id = 'f' + i);
+  const reachedByCount = new Map([...reachedBy].map(([k, v]) => [k, v.size]));
+  return { nodes, nodeMap, edges, findings, suggested, ownerId, reachedByCount, inflow, outflow, lossBy, totalLoss, personById, accById, nameOf };
+}
+
+/* =====================================================================
+   Map: layout + rendering
+   Columns follow the money left to right. Each holder sits directly
+   above the accounts they hold, so ownership reads without long lines.
+   ===================================================================== */
+const COL_W = 330, GROUP_GAP = 30, IN_GAP = 10, NODE_W = 210;
+let A = null;                     // latest analysis
+let geo = new Map();              // id -> {x,y,w,h}
+let view = { x: 40, y: 80, z: 1 };
+let layers = { money: true, owns: true, shared: true, mention: true };
+let selected = null, focusFinding = null;
+let fitPending = true;
+
+function nodeHTML(n) {
+  const r = n.ref;
+  const qCount = A.edges.filter(e => e.type === 'mention' && e.q && e.to === n.id).length;
+  const nCount = A.edges.filter(e => e.type === 'mention' && !e.q && e.to === n.id).length;
+  const flags = (qCount ? `<span class="flag q" title="${qCount} question(s) mention this">? ${qCount}</span>` : '') +
+                (nCount ? `<span class="flag n" title="${nCount} note(s) mention this">✎ ${nCount}</span>` : '');
+  if (n.kind === 'note') return `<div class="node k-note" data-id="${n.id}"><div class="node-top"><span class="tag">Note${r.date ? ' · ' + fmtDate(r.date) : ''}</span></div><div class="node-body"><div class="node-title">${esc(r.text)}</div></div></div>`;
+  if (n.kind === 'question') return `<div class="node k-question ${r.status === 'answered' ? 'answered' : ''}" data-id="${n.id}"><div class="node-top"><span class="tag">${r.status === 'answered' ? 'Answered' : 'Open question'}</span></div><div class="node-body"><div class="node-title">${esc(r.text)}</div>${r.status === 'answered' && r.answer ? `<div class="node-sub">${esc(r.answer)}</div>` : ''}</div></div>`;
+  if (n.kind === 'account') {
+    const inn = A.inflow.get(n.id) || 0, out = A.outflow.get(n.id) || 0;
+    const holder = A.ownerId.get(n.id);
+    const multi = (A.reachedByCount?.get(n.id) || 0) >= 2;
+    return `<div class="node k-account ${holder ? '' : 'unknown'}" data-id="${n.id}">
+      <div class="node-top"><span class="tag">${esc(ACC_TYPE[r.type] || 'Account')}</span><span class="node-flags">${multi ? '<span class="flag hot" title="Money from more than one victim reaches this account">Shared</span>' : ''}${flags}</span></div>
+      <div class="node-body"><div class="node-title">${esc(r.institution || 'Unnamed institution')}</div><div class="node-num mono">${esc(r.number || 'No number')}</div>
+      ${holder ? '' : `<div class="node-sub">${r.holder ? 'Holder: ' + esc(r.holder) + ' (not in case)' : 'Holder not identified'}</div>`}</div>
+      ${inn || out ? `<div class="node-foot"><span>In <span class="in">${money(inn, true)}</span></span><span>Out <span class="out">${money(out, true)}</span></span></div>` : ''}
+    </div>`;
+  }
+  const loss = A.lossBy.get(n.id);
+  const sub = [r.aliases ? 'aka ' + r.aliases : '', r.phone, r.email].filter(Boolean).join(' · ');
+  return `<div class="node k-${n.kind}" data-id="${n.id}">
+    <div class="node-top"><span class="tag">${ROLE[n.kind] || 'Person'}</span><span class="node-flags">${flags}</span></div>
+    <div class="node-body"><div class="node-title">${esc(r.name || 'Unnamed')}</div>${sub ? `<div class="node-sub">${esc(sub)}</div>` : ''}</div>
+    ${n.kind === 'victim' ? `<div class="node-foot"><span>Reported loss</span><span class="out">${loss ? money(loss) : '—'}</span></div>` : ''}
+  </div>`;
+}
+
+function computeLayout() {
+  const S = state, own = A.ownerId;
+  const people = S.people, accs = S.accounts;
+  // money depth of each account (longest path from any victim account)
+  const depth = new Map();
+  accs.forEach(a => { if (A.personById.get(own.get(a.id))?.role === 'victim') depth.set(a.id, 0); });
+  const money = A.edges.filter(e => e.type === 'money');
+  for (let i = 0; i < accs.length + 1; i++) {
+    let ch = false;
+    money.forEach(e => {
+      if (!depth.has(e.from)) return;
+      const d = Math.min(depth.get(e.from) + 1, accs.length);
+      if ((depth.get(e.to) ?? -1) < d && A.personById.get(own.get(e.to))?.role !== 'victim') { depth.set(e.to, d); ch = true; }
+    });
+    if (!ch) break;
+  }
+  // unreached accounts: place after whatever sends to them, else at step 1
+  accs.forEach(a => { if (!depth.has(a.id)) { const ins = money.filter(e => e.to === a.id && depth.has(e.from)); depth.set(a.id, ins.length ? Math.max(...ins.map(e => depth.get(e.from))) + 1 : 1); } });
+
+  // groups = holder + their accounts
+  const groups = [];
+  const inGroup = new Set();
+  people.forEach(p => {
+    const mine = accs.filter(a => own.get(a.id) === p.id);
+    let col;
+    if (p.role === 'victim') col = 0;
+    else if (mine.length) col = Math.max(1, Math.min(...mine.map(a => depth.get(a.id))));
+    else col = null;
+    groups.push({ ids: [p.id, ...mine.map(a => a.id)], col, lead: p.id });
+    mine.forEach(a => inGroup.add(a.id));
+  });
+  accs.forEach(a => { if (!inGroup.has(a.id)) groups.push({ ids: [a.id], col: Math.max(1, depth.get(a.id)), lead: a.id }); });
+  const colOf = new Map();
+  groups.forEach(g => { if (g.col != null) g.ids.forEach(id => colOf.set(id, g.col)); });
+  const maxCol = Math.max(0, ...groups.map(g => g.col ?? 0));
+  groups.filter(g => g.col == null).forEach(g => {
+    const linked = A.edges.filter(e => e.type !== 'mention' && (e.from === g.lead || e.to === g.lead)).map(e => e.from === g.lead ? e.to : e.from).filter(id => colOf.has(id)).map(id => colOf.get(id));
+    g.col = linked.length ? Math.max(1, Math.round(linked.reduce((a, b) => a + b, 0) / linked.length)) : maxCol + 1;
+    g.col = Math.min(g.col, maxCol + 1);
+    g.ids.forEach(id => colOf.set(id, g.col));
+  });
+
+  const cols = [];
+  groups.forEach(g => { (cols[g.col] = cols[g.col] || []).push(g); });
+  const h = id => geo.get(id)?.h || 90;
+  const gH = g => g.ids.reduce((s, id) => s + h(id), 0) + IN_GAP * (g.ids.length - 1);
+  const pos = new Map();
+  const place = () => {
+    cols.forEach((list, c) => {
+      if (!list) return;
+      const total = list.reduce((s, g) => s + gH(g), 0) + GROUP_GAP * (list.length - 1);
+      let y = -total / 2;
+      list.forEach(g => { g.ids.forEach(id => { pos.set(id, { x: c * COL_W, y }); y += h(id) + IN_GAP; }); y += GROUP_GAP - IN_GAP; });
+    });
+  };
+  // order: first by earliest money date, then barycentre sweeps to reduce crossings
+  const firstDate = g => { const ds = S.transactions.filter(t => g.ids.includes(t.to) || g.ids.includes(t.from)).map(t => t.date).filter(Boolean).sort(); return ds[0] || '9999'; };
+  cols.forEach((list, c) => { if (list && c > 0) list.sort((a, b) => firstDate(a).localeCompare(firstDate(b))); });
+  place();
+  const nb = new Map();
+  A.edges.filter(e => e.type !== 'mention').forEach(e => { [[e.from, e.to], [e.to, e.from]].forEach(([a, b]) => { if (!nb.has(a)) nb.set(a, []); nb.get(a).push(b); }); });
+  const bary = (g, dir) => {
+    const ys = [];
+    g.ids.forEach(id => (nb.get(id) || []).forEach(o => { const oc = colOf.get(o); if (oc != null && (dir > 0 ? oc < g.col : oc > g.col) && pos.has(o)) ys.push(pos.get(o).y + h(o) / 2); }));
+    return ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : null;
+  };
+  for (let pass = 0; pass < 6; pass++) {
+    const dir = pass % 2 ? -1 : 1;
+    const idx = [...cols.keys()]; if (dir < 0) idx.reverse();
+    idx.forEach(c => {
+      const list = cols[c]; if (!list || list.length < 2) return;
+      const cur = new Map(list.map((g, i) => [g, pos.get(g.ids[0]).y]));
+      list.forEach(g => { g._b = bary(g, dir); if (g._b == null) g._b = cur.get(g); });
+      list.sort((a, b) => a._b - b._b);
+      place();
+    });
+  }
+  // column headers
+  const heads = [];
+  cols.forEach((list, c) => {
+    if (!list) return;
+    const top = Math.min(...list.flatMap(g => g.ids.map(id => pos.get(id).y)));
+    heads.push({ x: c * COL_W, y: top - 30, text: c === 0 ? 'Victims' : `Step ${c} · where the money went` });
+  });
+  // notes & questions lane underneath
+  let bottom = Math.max(0, ...[...pos].map(([id, p]) => p.y + h(id)));
+  const laneY = bottom + 120;
+  const lanes = [];
+  const rows = [[['note', 'question'], 'Notes, observations & questions']];
+  let y = laneY;
+  rows.forEach(([kinds, title]) => {
+    const items = A.nodes.filter(n => kinds.includes(n.kind));
+    if (!items.length) return;
+    lanes.push({ y: y - 30, text: title });
+    const want = items.map(n => {
+      const xs = A.edges.filter(e => e.from === n.id).map(e => pos.get(e.to)?.x).filter(v => v != null);
+      return { n, x: xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 1e9 };
+    }).sort((a, b) => a.x - b.x);
+    let prevX = -Infinity, rowH = 0;
+    want.forEach(w => { const x = Math.max(w.x === 1e9 ? prevX + 250 : w.x, prevX + 250, 0); pos.set(w.n.id, { x, y }); prevX = x; rowH = Math.max(rowH, h(w.n.id)); });
+    y += rowH + 80;
+  });
+  return { pos, heads, lanes, colCount: cols.length };
+}
+
+function renderMap() {
+  const nodesEl = $('#nodes');
+  $('#map-empty').hidden = A.nodes.length > 0;
+  nodesEl.innerHTML = A.nodes.map(nodeHTML).join('');
+  // measure real card heights, then lay out
+  geo = new Map();
+  $$('.node', nodesEl).forEach(el => geo.set(el.dataset.id, { w: el.offsetWidth, h: el.offsetHeight }));
+  const L = computeLayout();
+  $$('.node', nodesEl).forEach(el => {
+    const id = el.dataset.id, p = state.pos[id] || L.pos.get(id) || { x: 0, y: 0 };
+    Object.assign(geo.get(id), { x: p.x, y: p.y });
+    el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
+  });
+  $('#lanes').innerHTML = L.heads.map(hd => `<div class="lane-label" style="left:${hd.x}px;top:${hd.y}px">${esc(hd.text)}</div>`).join('') +
+    L.lanes.map(l => `<div class="lane-label" style="left:0;top:${l.y}px">${esc(l.text)}</div><div class="lane-rule" style="left:0;top:${l.y - 14}px;width:${Math.max(1, L.colCount) * COL_W - (COL_W - NODE_W)}px"></div>`).join('');
+  drawEdges();
+  applyHighlight();
+  if (fitPending) { fitPending = false; fit(); }
+}
+
+function anchor(g, side) {
+  switch (side) {
+    case 'r': return [g.x + g.w, g.y + g.h / 2];
+    case 'l': return [g.x, g.y + g.h / 2];
+    case 't': return [g.x + g.w / 2, g.y];
+    default: return [g.x + g.w / 2, g.y + g.h];
+  }
+}
+function edgePath(e) {
+  const a = geo.get(e.from), b = geo.get(e.to);
+  if (!a || !b) return null;
+  let p0, p1, p2, p3;
+  const acx = a.x + a.w / 2, bcx = b.x + b.w / 2, acy = a.y + a.h / 2, bcy = b.y + b.h / 2;
+  if (Math.abs(acx - bcx) < 40 && e.type === 'owns') {           // same column: bracket on the left
+    p0 = anchor(a, 'l'); p3 = anchor(b, 'l');
+    const k = Math.min(60, 18 + Math.abs(p3[1] - p0[1]) * 0.12);
+    p1 = [p0[0] - k, p0[1]]; p2 = [p3[0] - k, p3[1]];
+  } else if (Math.abs(bcy - acy) > Math.abs(bcx - acx) * 0.9 && e.type !== 'money') { // mostly vertical
+    const down = bcy > acy;
+    p0 = anchor(a, down ? 'b' : 't'); p3 = anchor(b, down ? 't' : 'b');
+    const k = Math.max(40, Math.abs(p3[1] - p0[1]) * 0.45) * (down ? 1 : -1);
+    p1 = [p0[0], p0[1] + k]; p2 = [p3[0], p3[1] - k];
+  } else if (b.x >= a.x + a.w - 10) {
+    p0 = anchor(a, 'r'); p3 = anchor(b, 'l');
+    const k = Math.max(50, (p3[0] - p0[0]) * 0.45);
+    p1 = [p0[0] + k, p0[1]]; p2 = [p3[0] - k, p3[1]];
+  } else if (a.x >= b.x + b.w - 10) {
+    if (e.type === 'money') {                                    // money going backwards: loop round
+      p0 = anchor(a, 'r'); p3 = anchor(b, 'l');
+      p1 = [p0[0] + 120, p0[1] + 80]; p2 = [p3[0] - 120, p3[1] + 80];
+    } else {
+      p0 = anchor(a, 'l'); p3 = anchor(b, 'r');
+      const k = Math.max(50, (p0[0] - p3[0]) * 0.45);
+      p1 = [p0[0] - k, p0[1]]; p2 = [p3[0] + k, p3[1]];
+    }
+  } else {
+    p0 = anchor(a, 'r'); p3 = anchor(b, 'r');
+    p1 = [p0[0] + 70, p0[1]]; p2 = [p3[0] + 70, p3[1]];
+  }
+  const at = t => { const u = 1 - t; return [u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0], u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1]]; };
+  let mid = at(0.5);
+  if (e.type === 'money' && p3[0] - p0[0] > COL_W) {   // long flow: put the label in the gap just before the receiving account
+    const tx = p3[0] - (COL_W - NODE_W) / 2; let lo = 0.5, hi = 1;
+    for (let i = 0; i < 20; i++) { const m = (lo + hi) / 2; if (at(m)[0] < tx) lo = m; else hi = m; }
+    mid = at(lo);
+  }
+  return { d: `M${p0[0]},${p0[1]} C${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]}`, mid };
+}
+
+function drawEdges() {
+  let minX = 0, minY = 0, maxX = 0, maxY = 0;
+  geo.forEach(g => { minX = Math.min(minX, g.x); minY = Math.min(minY, g.y); maxX = Math.max(maxX, g.x + g.w); maxY = Math.max(maxY, g.y + g.h); });
+  const svg = $('#edges');
+  const pad = 400;
+  svg.setAttribute('width', maxX - minX + pad * 2); svg.setAttribute('height', maxY - minY + pad * 2);
+  svg.style.left = (minX - pad) + 'px'; svg.style.top = (minY - pad) + 'px';
+  svg.setAttribute('viewBox', `${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`);
+  let paths = '', labels = [];
+  A.edges.forEach(e => {
+    if (!layers[e.type]) return;
+    const p = edgePath(e); if (!p) return;
+    e._mid = p.mid;
+    const cls = `edge ${e.type}${e.q ? ' q' : ''}`;
+    paths += `<path class="${cls}" data-e="${e.id}" d="${p.d}"${e.type === 'money' ? ' marker-end="url(#arrow)"' : ''}/><path class="edge-hit" data-e="${e.id}" d="${p.d}"><title>${esc(e.why)}</title></path>`;
+    if (e.type === 'money') labels.push({ e, x: p.mid[0], y: p.mid[1], html: `${esc(e.label)}<small>${esc(e.sub)}</small>`, cls: 'money', h: 34 });
+    else if (e.type === 'shared' && e.label) labels.push({ e, x: p.mid[0], y: p.mid[1], html: esc(e.label), cls: 'shared', h: 22 });
+  });
+  svg.innerHTML = paths;
+  // nudge overlapping labels apart
+  labels.sort((a, b) => a.y - b.y);
+  for (let i = 0; i < labels.length; i++) for (let j = 0; j < i; j++) {
+    const a = labels[j], b = labels[i];
+    if (Math.abs(a.x - b.x) < 120 && b.y - a.y < (a.h + b.h) / 2 + 4) b.y = a.y + (a.h + b.h) / 2 + 4;
+  }
+  $('#elabels').innerHTML = labels.map(l => `<div class="elabel ${l.cls}" data-e="${l.e.id}" style="left:${l.x}px;top:${l.y}px">${l.html}</div>`).join('');
+}
+
+function highlightSet() {
+  if (focusFinding) { const f = A.findings.find(x => x.id === focusFinding); if (f) return { n: new Set(f.nodes), e: new Set(f.edges) }; }
+  if (selected && A.nodeMap.has(selected)) {
+    const n = new Set([selected]), e = new Set();
+    A.edges.forEach(x => { if (x.from === selected || x.to === selected) { e.add(x.id); n.add(x.from); n.add(x.to); } });
+    // show the holder's accounts with the holder
+    A.edges.filter(x => x.type === 'owns' && x.from === selected).forEach(x => A.edges.forEach(y => { if (y.type === 'money' && (y.from === x.to || y.to === x.to)) { e.add(y.id); n.add(y.from); n.add(y.to); } }));
+    return { n, e };
+  }
+  return null;
+}
+function applyHighlight() {
+  const hs = highlightSet();
+  $('#world').classList.toggle('dim', !!hs);
+  $$('#nodes .node').forEach(el => { el.classList.toggle('hl', !!hs && hs.n.has(el.dataset.id)); el.classList.toggle('sel', el.dataset.id === selected); });
+  $$('#edges .edge, #elabels .elabel').forEach(el => el.classList.toggle('hl', !!hs && hs.e.has(el.dataset.e)));
+}
+
+/* ---------- pan / zoom / drag ---------- */
+const vp = $('#viewport'), world = $('#world');
+function applyView() { world.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.z})`; vp.style.backgroundPosition = `${view.x}px ${view.y}px`; vp.style.backgroundSize = `${24 * view.z}px ${24 * view.z}px`; }
+function zoomAt(f, cx, cy) {
+  const z = Math.min(2.2, Math.max(0.2, view.z * f));
+  view.x = cx - (cx - view.x) * (z / view.z); view.y = cy - (cy - view.y) * (z / view.z); view.z = z; applyView();
+}
+function fit() {
+  if (!geo.size) { view = { x: 40, y: 80, z: 1 }; applyView(); return; }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  geo.forEach(g => { minX = Math.min(minX, g.x); minY = Math.min(minY, g.y - 34); maxX = Math.max(maxX, g.x + g.w); maxY = Math.max(maxY, g.y + g.h); });
+  const r = vp.getBoundingClientRect();
+  const top = 64, pad = 28, avW = r.width - pad * 2, avH = r.height - top - pad - 44;
+  const minZ = r.width < 700 ? 0.55 : 0.62;
+  const z = Math.min(1.1, Math.min(avW / (maxX - minX), avH / (maxY - minY)));
+  if (z >= minZ) { view.z = z; view.x = pad + (avW - (maxX - minX) * z) / 2 - minX * z; view.y = top + (avH - (maxY - minY) * z) / 2 - minY * z; }
+  else {                      // too big to read at once: stay readable and start from the victims
+    view.z = minZ; view.x = pad - minX * minZ;
+    const fitH = (maxY - minY) * minZ; view.y = fitH < avH ? top + (avH - fitH) / 2 - minY * minZ : top - minY * minZ;
+  }
+  applyView();
+}
+const ptrs = new Map();
+let drag = null, lastTap = {};
+vp.addEventListener('pointerdown', ev => {
+  if (ev.button !== 0 && ev.pointerType === 'mouse') return;
+  ptrs.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  vp.setPointerCapture(ev.pointerId);
+  if (ptrs.size === 2) { const [p, q] = [...ptrs.values()]; drag = { type: 'pinch', d: Math.hypot(p.x - q.x, p.y - q.y), z: view.z }; return; }
+  const nodeEl = ev.target.closest('.node');
+  const edgeEl = ev.target.closest('[data-e]');
+  if (nodeEl) { const g = geo.get(nodeEl.dataset.id); drag = { type: 'node', id: nodeEl.dataset.id, el: nodeEl, sx: ev.clientX, sy: ev.clientY, ox: g.x, oy: g.y, moved: false }; }
+  else drag = { type: 'pan', sx: ev.clientX, sy: ev.clientY, ox: view.x, oy: view.y, moved: false, edge: edgeEl?.dataset.e };
+});
+vp.addEventListener('pointermove', ev => {
+  if (!ptrs.has(ev.pointerId) || !drag) return;
+  ptrs.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (drag.type === 'pinch' && ptrs.size === 2) {
+    const [p, q] = [...ptrs.values()]; const r = vp.getBoundingClientRect();
+    zoomAt(drag.z * Math.hypot(p.x - q.x, p.y - q.y) / drag.d / view.z, (p.x + q.x) / 2 - r.left, (p.y + q.y) / 2 - r.top); return;
+  }
+  const dx = ev.clientX - drag.sx, dy = ev.clientY - drag.sy;
+  if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+  drag.moved = true;
+  if (drag.type === 'pan') { vp.classList.add('panning'); view.x = drag.ox + dx; view.y = drag.oy + dy; applyView(); }
+  else if (drag.type === 'node') {
+    const g = geo.get(drag.id); g.x = drag.ox + dx / view.z; g.y = drag.oy + dy / view.z;
+    drag.el.style.left = g.x + 'px'; drag.el.style.top = g.y + 'px'; drawEdges(); applyHighlight();
+  }
+});
+function endPtr(ev) {
+  ptrs.delete(ev.pointerId);
+  if (!drag) return;
+  if (drag.type === 'pinch') { if (!ptrs.size) drag = null; return; }
+  vp.classList.remove('panning');
+  if (drag.type === 'node') {
+    if (drag.moved) { const g = geo.get(drag.id); state.pos[drag.id] = { x: Math.round(g.x), y: Math.round(g.y) }; save(); }
+    else {
+      const now = Date.now();
+      if (lastTap.id === drag.id && now - lastTap.t < 380) { lastTap = {}; openEditorFor(drag.id); }
+      else { lastTap = { id: drag.id, t: now }; selectNode(drag.id); }
+    }
+  } else if (!drag.moved) {
+    if (drag.edge) { const e = A.edges.find(x => x.id === drag.edge); if (e) { selected = null; focusFinding = null; showEdge(e); } }
+    else { selected = null; focusFinding = null; applyHighlight(); renderRight(); }
+  }
+  drag = null;
+}
+vp.addEventListener('pointerup', endPtr);
+vp.addEventListener('pointercancel', endPtr);
+vp.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const r = vp.getBoundingClientRect();
+  if (ev.ctrlKey || ev.deltaMode === 1 || Math.abs(ev.deltaY) >= 50 && ev.deltaX === 0) zoomAt(Math.exp(-ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0022)), ev.clientX - r.left, ev.clientY - r.top);
+  else { view.x -= ev.deltaX; view.y -= ev.deltaY; applyView(); }
+}, { passive: false });
+
+/* =====================================================================
+   Panels
+   ===================================================================== */
+let rightTab = 'findings', mainView = 'map', edgeDetail = null;
+const personName = id => A.personById.get(id)?.name;
+const accHolderName = id => personName(A.ownerId.get(id)) || accLabel(A.accById.get(id));
+
+function renderKpis() {
+  const S = state;
+  const openQ = S.questions.filter(q => q.status !== 'answered').length;
+  const found = A.edges.filter(e => e.type !== 'owns').length;
+  const k = [
+    ['Victims', S.people.filter(p => p.role === 'victim').length, ''],
+    ['Reported loss', money(A.totalLoss, true), 'loss'],
+    ['Alleged fraudsters', S.people.filter(p => p.role === 'suspect').length, 'hide-md'],
+    ['Accounts', S.accounts.length, 'hide-md'],
+    ['Links found', found, ''],
+    ['Open questions', openQ, 'q']
+  ];
+  $('#kpis').innerHTML = k.map(([l, v, c]) => `<div class="kpi ${c}"><b>${v}</b><span>${l}</span></div>`).join('');
+}
+
+function renderLeft() {
+  const S = state;
+  const sec = (key, title, color, rows, emptyText) => `
+    <div class="section">
+      <div class="section-head"><h3><span class="dot" style="--c:${color}"></span>${title}<span class="count">${rows.length}</span></h3>
+        <button class="btn small ghost" type="button" data-add="${key}">+ Add</button></div>
+      <div class="rows">${rows.length ? rows.join('') : `<div class="empty-row">${emptyText}</div>`}</div>
+    </div>`;
+  const row = (id, title, sub, end = '', endCls = '') => `<button type="button" class="row ${selected === id ? 'active' : ''}" data-row="${id}"><span class="row-main"><span class="row-title">${esc(title)}</span>${sub ? `<span class="row-sub">${esc(sub)}</span>` : ''}</span><span class="row-end ${endCls}">${end}</span></button>`;
+  const personRows = role => S.people.filter(p => p.role === role).map(p => {
+    const accs = S.accounts.filter(a => A.ownerId.get(a.id) === p.id).length;
+    return row(p.id, p.name, [p.aliases && 'aka ' + p.aliases, accs ? accs + ' account' + (accs > 1 ? 's' : '') : ''].filter(Boolean).join(' · '), role === 'victim' && A.lossBy.get(p.id) ? money(A.lossBy.get(p.id), true) : '');
+  });
+  const accRows = S.accounts.map(a => row(a.id, accLabel(a), A.ownerId.get(a.id) ? personName(A.ownerId.get(a.id)) : (a.holder ? a.holder + ' (not in case)' : 'Holder not identified'), A.inflow.get(a.id) ? '↓ ' + money(A.inflow.get(a.id), true) : '', 'money'));
+  const txRows = S.transactions.slice().sort(byDate).map(t => row(t.id, `${accHolderName(t.from)} → ${accHolderName(t.to)}`, [fmtDate(t.date), t.method, t.reference].filter(Boolean).join(' · '), money(t.amount, true), 'money'));
+  const noteRows = S.notes.slice().sort(byDate).map(n => row(n.id, n.text, n.date ? fmtDate(n.date) : 'No date'));
+  const qRows = S.questions.map(q => row(q.id, q.text, q.status === 'answered' ? q.answer : '', `<span class="status-pill ${q.status === 'answered' ? 'status-answered' : 'status-open'}">${q.status === 'answered' ? 'Answered' : 'Open'}</span>`));
+  $('#data-list').innerHTML =
+    sec('victim', 'Victims', 'var(--victim)', personRows('victim'), 'Add the people who lost money.') +
+    sec('suspect', 'Alleged fraudsters', 'var(--fraud)', personRows('suspect'), 'Add people or companies suspected of the fraud.') +
+    sec('other', 'Other parties', 'var(--ink-2)', personRows('other'), 'Money mules, witnesses, banks or anyone else involved.') +
+    sec('account', 'Accounts & wallets', 'var(--account)', accRows, 'Bank accounts, cards, payment apps or crypto wallets.') +
+    sec('transaction', 'Transactions', 'var(--money)', txRows, 'Payments between accounts. Use “Paste data” to add many at once.') +
+    sec('note', 'Notes & observations', 'var(--note)', noteRows, 'Anything you noticed. Names, numbers and phones in notes are linked automatically.') +
+    sec('question', 'Questions', 'var(--question)', qRows, 'Open questions you still need answered.');
+}
+
+function renderRight() {
+  $$('.tab').forEach(t => t.classList.toggle('on', t.dataset.rtab === rightTab));
+  $('#count-findings').textContent = A.findings.length;
+  $('#count-questions').textContent = state.questions.filter(q => q.status !== 'answered').length;
+  const body = $('#right-body');
+  if (rightTab === 'findings') {
+    body.innerHTML = `<p class="muted" style="font-size:12px;margin:10px 4px 0">Found automatically from the case data. Select one to see it on the map.</p>` +
+      (A.findings.length ? A.findings.map(f => `<button type="button" class="finding ${f.sev} ${focusFinding === f.id ? 'on' : ''}" data-finding="${f.id}">
+        <div class="f-head"><span class="sev">${f.sev === 'high' ? 'Key link' : f.sev === 'med' ? 'Worth checking' : 'Info'}</span><span class="f-kind">${esc(f.kind)}</span></div>
+        <div class="f-title">${esc(f.title)}</div><div class="f-text">${f.text}</div></button>`).join('')
+        : `<p class="empty-row" style="padding:12px 4px">No links yet. Add people, accounts and payments, and links will appear here.</p>`);
+  } else if (rightTab === 'questions') {
+    const open = state.questions.filter(q => q.status !== 'answered'), done = state.questions.filter(q => q.status === 'answered');
+    const card = q => `<div class="q-card"><div class="q-text">${esc(q.text)}</div>${q.status === 'answered' && q.answer ? `<div class="q-answer">${esc(q.answer)}</div>` : ''}
+      <div class="q-meta"><span class="status-pill ${q.status === 'answered' ? 'status-answered' : 'status-open'}">${q.status === 'answered' ? 'Answered' : 'Open'}</span>
+      ${linkedChips(q.id)}<span style="flex:1"></span><button class="btn small" type="button" data-edit="${q.id}">${q.status === 'answered' ? 'Edit' : 'Answer'}</button></div></div>`;
+    body.innerHTML = `
+      <div class="q-add"><textarea class="input" id="q-new" placeholder="Ask an open question… e.g. Who opened the Revolut account?"></textarea><button class="btn primary" type="button" id="q-add-btn">Add</button></div>
+      <div class="sub-h">Open <span class="count">${open.length}</span></div>${open.map(card).join('') || '<div class="empty-row">No open questions.</div>'}
+      ${A.suggested.length ? `<div class="sub-h">Suggested by the map <span class="count">${A.suggested.length}</span></div>` + A.suggested.map((s, i) => `<div class="q-card suggested"><div class="q-text">${esc(s.text)}</div><div class="q-meta"><span class="muted" style="font-size:11.5px">Gap spotted in the data</span><span style="flex:1"></span><button class="btn small" type="button" data-suggest="${i}">+ Add question</button></div></div>`).join('') : ''}
+      ${done.length ? `<div class="sub-h">Answered <span class="count">${done.length}</span></div>${done.map(card).join('')}` : ''}`;
+  } else {
+    body.innerHTML = edgeDetail ? edgeDetailHTML(edgeDetail) : selected ? detailHTML(selected) : `<p class="empty-row" style="padding:14px 4px">Select anything on the map or in the case list to see its details and every link to it.</p>`;
+  }
+}
+function linkedChips(id) {
+  return A.edges.filter(e => e.from === id).map(e => `<button type="button" class="btn small ghost" data-goto="${e.to}" title="${esc(e.why)}">${esc(A.nameOf(e.to))}</button>`).join('');
+}
+const TYPE_LINE = { money: ['var(--money)', ''], owns: ['var(--account)', ''], shared: ['var(--shared)', 'dash'], mention: ['var(--note)', 'dot'] };
+function refById(id) { return state.people.find(x => x.id === id) || state.accounts.find(x => x.id === id) || state.notes.find(x => x.id === id) || state.questions.find(x => x.id === id) || state.transactions.find(x => x.id === id); }
+function detailHTML(id) {
+  const t = state.transactions.find(x => x.id === id);
+  if (t) return txDetailHTML(t);
+  const n = A.nodeMap.get(id); if (!n) return '';
+  const r = n.ref;
+  let head = '', kv = [];
+  if (n.kind === 'account') {
+    head = `<span class="tag" style="--c:var(--account);--soft:var(--account-soft)">${esc(ACC_TYPE[r.type] || 'Account')}</span><h3>${esc(accLabel(r))}</h3>`;
+    kv = [['Holder', A.ownerId.get(id) ? personName(A.ownerId.get(id)) : (r.holder || 'Not identified')], ['Institution', r.institution], ['Number', `<span class="mono">${esc(r.number)}</span>`, true], ['Money in', money(A.inflow.get(id) || 0)], ['Money out', money(A.outflow.get(id) || 0)], ['Notes', r.notes]];
+  } else if (n.kind === 'note' || n.kind === 'question') {
+    head = `<span class="tag" style="--c:var(--${n.kind});--soft:var(--${n.kind}-soft)">${n.kind === 'note' ? 'Note' : r.status === 'answered' ? 'Answered question' : 'Open question'}</span><h3 style="font-size:14px;font-weight:600">${esc(r.text)}</h3>`;
+    kv = n.kind === 'note' ? [['Date', r.date ? fmtDate(r.date) : '']] : [['Answer', r.answer]];
+  } else {
+    const c = n.kind === 'victim' ? 'victim' : n.kind === 'suspect' ? 'fraud' : 'account';
+    head = `<span class="tag" style="--c:var(--${c});--soft:var(--${c}-soft)">${ROLE[n.kind]}</span><h3>${esc(r.name)}</h3>`;
+    kv = [['Also known as', r.aliases], ['Phone', r.phone], ['Email', r.email], n.kind === 'victim' ? ['Reported loss', money(A.lossBy.get(id) || 0)] : null, ['Notes', r.notes]].filter(Boolean);
+  }
+  const conns = A.edges.filter(e => e.from === id || e.to === id);
+  return `<div class="detail-card">${head}
+    <dl class="kv">${kv.filter(x => x[1]).map(([k, v, raw]) => `<dt>${k}</dt><dd>${raw ? v : esc(v)}</dd>`).join('')}</dl>
+    <button class="btn small" type="button" data-edit="${id}">Edit</button>
+    <div class="sub-h">Links <span class="count">${conns.length}</span></div>
+    ${conns.map(e => { const other = e.from === id ? e.to : e.from; const [c, st] = TYPE_LINE[e.type]; const dir = e.type === 'money' ? (e.from === id ? 'Paid ' : 'Received from ') : '';
+      return `<div class="conn"><i class="${st}" style="--c:${e.q ? 'var(--question)' : c}"></i><div>${dir}<button type="button" data-goto="${other}">${esc(A.nameOf(other))}</button>${e.type === 'money' ? ` <span class="mono" style="color:var(--money)">${money(e.total)}</span>` : ''}<small>${esc(e.why)}</small></div></div>`; }).join('') || '<div class="empty-row">No links yet.</div>'}
+  </div>`;
+}
+function txDetailHTML(t) {
+  return `<div class="detail-card"><span class="tag" style="--c:var(--money);--soft:var(--money-soft)">Transaction</span><h3 class="mono">${money(t.amount)}</h3>
+    <dl class="kv"><dt>Date</dt><dd>${fmtDate(t.date)}</dd><dt>From</dt><dd>${esc(accHolderName(t.from))}<br><span class="mono muted">${esc(A.accById.get(t.from)?.number || '')}</span></dd><dt>To</dt><dd>${esc(accHolderName(t.to))}<br><span class="mono muted">${esc(A.accById.get(t.to)?.number || '')}</span></dd>
+    ${t.method ? `<dt>Method</dt><dd>${esc(t.method)}</dd>` : ''}${t.reference ? `<dt>Reference</dt><dd class="mono">${esc(t.reference)}</dd>` : ''}${t.notes ? `<dt>Notes</dt><dd>${esc(t.notes)}</dd>` : ''}</dl>
+    <button class="btn small" type="button" data-edit="${t.id}">Edit</button></div>`;
+}
+function edgeDetailHTML(e) {
+  if (e.type !== 'money') return `<div class="detail-card"><span class="tag" style="--c:var(--shared);--soft:var(--sunken)">${e.type === 'owns' ? 'Holds account' : e.type === 'mention' ? 'Mentioned' : 'Found link'}</span><h3 style="font-size:14px">${esc(A.nameOf(e.from))} ↔ ${esc(A.nameOf(e.to))}</h3><p style="font-size:13px">${esc(e.why)}</p></div>`;
+  return `<div class="detail-card"><span class="tag" style="--c:var(--money);--soft:var(--money-soft)">Money flow</span><h3>${esc(accHolderName(e.from))} → ${esc(accHolderName(e.to))}</h3>
+    <p class="muted" style="margin:2px 0 8px;font-size:12.5px">${esc(e.why)}</p>
+    ${e.txs.map(t => `<div class="conn"><i style="--c:var(--money)"></i><div style="flex:1"><button type="button" data-row="${t.id}">${fmtDate(t.date)}</button><small>${esc([t.method, t.reference, t.notes].filter(Boolean).join(' · '))}</small></div><span class="mono" style="color:var(--money)">${money(t.amount)}</span></div>`).join('')}</div>`;
+}
+
+function selectNode(id, opts = {}) {
+  selected = id; focusFinding = null; edgeDetail = null;
+  const t = state.transactions.find(x => x.id === id);
+  if (t) { const e = A.edges.find(x => x.type === 'money' && x.txs.some(y => y.id === id)); if (e) { selected = null; focusFinding = null; highlightEdge(e); } }
+  rightTab = 'detail';
+  applyHighlight(); renderRight(); renderLeft();
+  if (opts.center) centerOn(t ? [t.from, t.to] : [id]);
+  if (window.matchMedia('(max-width:920px)').matches && opts.fromList) { closeDrawers(); }
+}
+function highlightEdge(e) {
+  edgeDetail = e;
+  $('#world').classList.add('dim');
+  $$('#nodes .node').forEach(el => el.classList.toggle('hl', el.dataset.id === e.from || el.dataset.id === e.to));
+  $$('#edges .edge, #elabels .elabel').forEach(el => el.classList.toggle('hl', el.dataset.e === e.id));
+}
+function showEdge(e) { rightTab = 'detail'; selected = null; highlightEdge(e); renderRight(); }
+function centerOn(ids) {
+  const gs = ids.map(id => geo.get(id)).filter(Boolean); if (!gs.length || mainView !== 'map') return;
+  const cx = gs.reduce((s, g) => s + g.x + g.w / 2, 0) / gs.length, cy = gs.reduce((s, g) => s + g.y + g.h / 2, 0) / gs.length;
+  const r = vp.getBoundingClientRect();
+  view.x = r.width / 2 - cx * view.z; view.y = r.height / 2 - cy * view.z; applyView();
+}
+
+function renderTimeline() {
+  const items = [
+    ...state.transactions.map(t => ({ date: t.date, kind: 'tx', t })),
+    ...state.notes.filter(n => n.date).map(n => ({ date: n.date, kind: 'note', n }))
+  ].sort(byDate);
+  let month = '', loss = 0, html = '';
+  items.forEach(it => {
+    const m = it.date ? it.date.slice(0, 7) : 'none';
+    if (m !== month) { month = m; html += `<div class="tl-month">${m === 'none' ? 'No date' : MONTHS[+m.slice(5, 7) - 1] + ' ' + m.slice(0, 4)}</div>`; }
+    if (it.kind === 'tx') {
+      const t = it.t, fromOwner = A.personById.get(A.ownerId.get(t.from)), isLoss = fromOwner?.role === 'victim' && A.ownerId.get(t.to) !== fromOwner.id;
+      if (isLoss) loss += t.amount;
+      html += `<div class="tl-item" data-row="${t.id}" style="cursor:pointer"><span class="tl-date">${it.date ? fmtDate(it.date) : '—'}</span><span class="tl-mark" style="--c:${isLoss ? 'var(--victim)' : 'var(--money)'}"></span>
+        <span class="tl-what">${esc(accHolderName(t.from))} → ${esc(accHolderName(t.to))}<small>${esc([t.method, t.reference && 'Ref ' + t.reference, t.notes].filter(Boolean).join(' · '))}</small></span>
+        <span class="tl-amt">${money(t.amount)}${isLoss ? `<small>Victim losses so far ${money(loss)}</small>` : ''}</span></div>`;
+    } else {
+      html += `<div class="tl-item" data-row="${it.n.id}" style="cursor:pointer"><span class="tl-date">${fmtDate(it.date)}</span><span class="tl-mark" style="--c:var(--note)"></span><span class="tl-what" style="font-weight:500">${esc(it.n.text)}</span><span></span></div>`;
+    }
+  });
+  $('#tl-inner').innerHTML = html || '<p class="empty-row" style="text-align:center;padding:40px">Add transactions or dated notes to build the timeline.</p>';
+}
+
+function renderAll() {
+  A = analyse();
+  $('#case-title').value = state.meta.title || '';
+  $('#case-ref').textContent = state.meta.ref || 'CASE';
+  document.title = (state.meta.title ? state.meta.title + ' · ' : '') + 'Case Map';
+  if (focusFinding && !A.findings.some(f => f.id === focusFinding)) focusFinding = null;
+  if (selected && !A.nodeMap.has(selected) && !state.transactions.some(t => t.id === selected)) selected = null;
+  edgeDetail = null;
+  renderKpis(); renderLeft(); renderRight();
+  if (mainView === 'map') renderMap(); else renderTimeline();
+}
+
+/* =====================================================================
+   Forms
+   ===================================================================== */
+const dlg = $('#dlg');
+let dlgSave = null, dlgDelete = null;
+const f = (id, label, value = '', opts = {}) => `<div class="field"><label for="${id}">${label}</label>${opts.area
+  ? `<textarea class="input" id="${id}" placeholder="${esc(opts.ph || '')}">${esc(value)}</textarea>`
+  : `<input class="input ${opts.mono ? 'mono' : ''}" id="${id}" type="${opts.type || 'text'}" value="${esc(value)}" placeholder="${esc(opts.ph || '')}"${opts.list ? ` list="${opts.list}"` : ''}${opts.req ? ' required' : ''}${opts.step ? ` step="${opts.step}"` : ''}>`}${opts.hint ? `<span class="hint">${opts.hint}</span>` : ''}</div>`;
+const choice = (id, options, value) => `<div class="choice" id="${id}" data-value="${value}">${options.map(([v, l]) => `<button type="button" data-v="${v}" class="${v === value ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+const val = id => ($('#' + id)?.value ?? '').trim();
+const choiceVal = id => $('#' + id).dataset.value;
+
+function openDialog(title, bodyHTML, onSave, onDelete, saveLabel = 'Save') {
+  $('#dlg-title').textContent = title;
+  $('#dlg-body').innerHTML = bodyHTML;
+  $('#dlg-save').textContent = saveLabel;
+  $('#dlg-save').hidden = !onSave;
+  const del = $('#dlg-delete'); del.hidden = !onDelete; del.classList.remove('armed'); del.textContent = 'Delete';
+  dlgSave = onSave; dlgDelete = onDelete;
+  dlg.showModal();
+  const first = $('#dlg-body input:not([type=hidden]), #dlg-body textarea'); if (first) setTimeout(() => first.focus(), 30);
+}
+$('#dlg-body').addEventListener('click', e => {
+  const b = e.target.closest('.choice button'); if (!b) return;
+  const c = b.parentElement; c.dataset.value = b.dataset.v; $$('button', c).forEach(x => x.classList.toggle('on', x === b));
+  c.dispatchEvent(new Event('change', { bubbles: true }));
+});
+$('#dlg-form').addEventListener('submit', e => { e.preventDefault(); if (dlgSave && dlgSave() !== false) { dlg.close(); save(); renderAll(); } });
+$$('[data-dlg-close]').forEach(b => b.addEventListener('click', () => dlg.close()));
+$('#dlg-delete').addEventListener('click', e => {
+  const b = e.currentTarget;
+  if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = 'Click again to delete'; return; }
+  dlgDelete(); dlg.close(); save(); renderAll(); toast('Deleted');
+});
+
+function peopleList() { return `<datalist id="dl-people">${state.people.map(p => `<option value="${esc(p.name)}">`).join('')}</datalist>`; }
+function editPerson(p, role) {
+  const isNew = !p; p = p || { id: uid('p'), role: role || 'victim', name: '', aliases: '', phone: '', email: '', notes: '' };
+  openDialog(isNew ? 'Add person' : 'Edit ' + p.name, `
+    <div class="field"><label>Role in the case</label>${choice('f-role', [['victim', 'Victim'], ['suspect', 'Alleged fraudster'], ['other', 'Other party']], p.role)}</div>
+    ${f('f-name', 'Full name or company name', p.name, { req: true, ph: 'e.g. Margaret Holloway' })}
+    ${f('f-aliases', 'Other names used', p.aliases, { ph: 'Separate with commas', hint: 'Aliases are matched in notes and account holders too.' })}
+    <div class="grid2">${f('f-phone', 'Phone', p.phone, { ph: '+44 7700 900000' })}${f('f-email', 'Email', p.email, { type: 'email', ph: 'name@example.com' })}</div>
+    ${f('f-notes', 'Notes', p.notes, { area: true, ph: 'How they were contacted, what they were told, anything relevant' })}`,
+    () => {
+      if (!val('f-name')) { toast('Add a name first'); return false; }
+      Object.assign(p, { role: choiceVal('f-role'), name: val('f-name'), aliases: val('f-aliases'), phone: val('f-phone'), email: val('f-email'), notes: val('f-notes') });
+      if (isNew) state.people.push(p);
+      toast(isNew ? 'Added ' + p.name : 'Saved');
+    },
+    isNew ? null : () => { state.people = state.people.filter(x => x.id !== p.id); delete state.pos[p.id]; });
+}
+const ACC_OPTS = Object.entries(ACC_TYPE).map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+function editAccount(a, presetHolder = '') {
+  const isNew = !a; a = a || { id: uid('a'), holder: presetHolder, institution: '', number: '', type: 'bank', notes: '' };
+  const txCount = state.transactions.filter(t => t.from === a.id || t.to === a.id).length;
+  openDialog(isNew ? 'Add account or wallet' : 'Edit account', `${peopleList()}
+    ${f('f-holder', 'Account holder', a.holder, { list: 'dl-people', ph: 'Pick a person, or leave empty if unknown', hint: 'Must match a person’s name or alias to link them.' })}
+    <div class="grid2">${f('f-inst', 'Bank or provider', a.institution, { ph: 'e.g. Barclays, Revolut, Coinbase' })}
+      <div class="field"><label for="f-type">Type</label><select class="input" id="f-type">${ACC_OPTS}</select></div></div>
+    ${f('f-number', 'Account number, IBAN or wallet address', a.number, { mono: true, ph: 'e.g. 20-45-77 43891022' })}
+    ${f('f-anotes', 'Notes', a.notes, { area: true })}
+    ${txCount ? `<p class="hint" style="font-size:11.5px;color:var(--muted)">Deleting this account also deletes its ${txCount} transaction${txCount > 1 ? 's' : ''}.</p>` : ''}`,
+    () => {
+      if (!val('f-number') && !val('f-inst')) { toast('Add a provider or an account number'); return false; }
+      Object.assign(a, { holder: val('f-holder'), institution: val('f-inst'), number: val('f-number'), type: $('#f-type').value, notes: val('f-anotes') });
+      if (isNew) state.accounts.push(a);
+    },
+    isNew ? null : () => { state.accounts = state.accounts.filter(x => x.id !== a.id); state.transactions = state.transactions.filter(t => t.from !== a.id && t.to !== a.id); delete state.pos[a.id]; });
+  $('#f-type').value = a.type || 'bank';
+}
+function accountOptions(sel) {
+  return `<option value="">Choose an account…</option>` + state.accounts.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${esc(accHolderName(a.id))} · ${esc(accLabel(a))}</option>`).join('') + `<option value="__new">+ New account…</option>`;
+}
+function newAccFields(p) { return `<div id="${p}-new" hidden style="padding:4px 10px 10px;margin-top:6px;border:1px dashed var(--line-strong);border-radius:8px">
+  <div class="grid2">${f(p + '-holder', 'Holder', '', { list: 'dl-people', ph: 'Name or empty' })}${f(p + '-inst', 'Bank or provider', '')}</div>${f(p + '-num', 'Account number or wallet', '', { mono: true })}</div>`; }
+function editTx(t) {
+  const isNew = !t; t = t || { id: uid('t'), date: '', from: '', to: '', amount: 0, method: '', reference: '', notes: '' };
+  openDialog(isNew ? 'Add transaction' : 'Edit transaction', `${peopleList()}
+    <datalist id="dl-method">${['Faster Payment', 'CHAPS', 'BACS', 'Wire transfer', 'SEPA', 'Card payment', 'Cash deposit', 'Cash withdrawal', 'Cheque', 'Crypto purchase', 'Crypto transfer', 'Gift cards', 'Zelle', 'PayPal'].map(m => `<option value="${m}">`).join('')}</datalist>
+    <div class="grid2">${f('f-date', 'Date', t.date, { type: 'date' })}${f('f-amount', `Amount (${state.meta.currency})`, t.amount || '', { type: 'number', step: '0.01', req: true, ph: '0.00' })}</div>
+    <div class="field"><label for="f-from">From account</label><select class="input" id="f-from">${accountOptions(t.from)}</select>${newAccFields('nf')}</div>
+    <div class="field"><label for="f-to">To account</label><select class="input" id="f-to">${accountOptions(t.to)}</select>${newAccFields('nt')}</div>
+    <div class="grid2">${f('f-method', 'Method', t.method, { list: 'dl-method', ph: 'e.g. Faster Payment' })}${f('f-ref', 'Payment reference', t.reference, { mono: true })}</div>
+    ${f('f-tnotes', 'Notes', t.notes, { area: true })}`,
+    () => {
+      const resolve = (sel, p) => {
+        if ($('#' + sel).value !== '__new') return $('#' + sel).value;
+        if (!val(p + '-num') && !val(p + '-inst') && !val(p + '-holder')) return '';
+        const a = { id: uid('a'), holder: val(p + '-holder'), institution: val(p + '-inst'), number: val(p + '-num'), type: 'bank', notes: '' };
+        state.accounts.push(a); return a.id;
+      };
+      const amount = parseAmount(val('f-amount'));
+      if (!amount) { toast('Enter an amount'); return false; }
+      const from = resolve('f-from', 'nf'), to = resolve('f-to', 'nt');
+      if (!from || !to) { toast('Choose both accounts'); return false; }
+      if (from === to) { toast('From and To must be different accounts'); return false; }
+      Object.assign(t, { date: parseDate(val('f-date')), amount, from, to, method: val('f-method'), reference: val('f-ref'), notes: val('f-tnotes') });
+      if (isNew) state.transactions.push(t);
+    },
+    isNew ? null : () => { state.transactions = state.transactions.filter(x => x.id !== t.id); });
+  ['from', 'to'].forEach((k, i) => $('#f-' + k).addEventListener('change', e => { $(`#${i ? 'nt' : 'nf'}-new`).hidden = e.target.value !== '__new'; }));
+}
+function editNote(n) {
+  const isNew = !n; n = n || { id: uid('n'), date: new Date().toISOString().slice(0, 10), text: '' };
+  openDialog(isNew ? 'Add note or observation' : 'Edit note', `${f('f-ndate', 'Date', n.date, { type: 'date' })}
+    ${f('f-ntext', 'Note', n.text, { area: true, ph: 'Write freely. Names, account numbers (or “ending 1234”), phones, emails and wallets are linked on the map automatically.' })}`,
+    () => { if (!val('f-ntext')) { toast('Write the note first'); return false; } Object.assign(n, { date: parseDate(val('f-ndate')), text: val('f-ntext') }); if (isNew) state.notes.push(n); },
+    isNew ? null : () => { state.notes = state.notes.filter(x => x.id !== n.id); delete state.pos[n.id]; });
+  $('#f-ntext').style.minHeight = '140px';
+}
+function editQuestion(q, preset = '') {
+  const isNew = !q; q = q || { id: uid('q'), text: preset, status: 'open', answer: '' };
+  openDialog(isNew ? 'Add question' : 'Question', `${f('f-qtext', 'Question', q.text, { area: true, ph: 'What do you still need to find out?' })}
+    <div class="field"><label>Status</label>${choice('f-qstatus', [['open', 'Open'], ['answered', 'Answered']], q.status)}</div>
+    ${f('f-qanswer', 'Answer or what you found', q.answer, { area: true, ph: 'Leave empty while the question is open' })}`,
+    () => { if (!val('f-qtext')) { toast('Write the question first'); return false; }
+      Object.assign(q, { text: val('f-qtext'), status: choiceVal('f-qstatus'), answer: val('f-qanswer') });
+      if (isNew) state.questions.push(q); },
+    isNew ? null : () => { state.questions = state.questions.filter(x => x.id !== q.id); delete state.pos[q.id]; });
+  // typing an answer marks the question answered (can be switched back)
+  $('#f-qanswer').addEventListener('input', e => { if (e.target.value.trim() && choiceVal('f-qstatus') === 'open') $('#f-qstatus [data-v="answered"]').click(); }, { once: true });
+}
+function editSettings() {
+  const cur = ['GBP', 'USD', 'EUR', 'PLN', 'CAD', 'AUD', 'CHF', 'INR', 'NZD', 'SGD', 'ZAR', 'AED'];
+  openDialog('Case details', `${f('f-title', 'Case title', state.meta.title)}
+    <div class="grid2">${f('f-ref2', 'Case reference', state.meta.ref, { mono: true })}
+    <div class="field"><label for="f-cur">Currency</label><select class="input" id="f-cur">${cur.map(c => `<option ${c === state.meta.currency ? 'selected' : ''}>${c}</option>`).join('')}</select></div></div>
+    ${f('f-analyst', 'Analyst', state.meta.analyst, { ph: 'Your name' })}`,
+    () => { Object.assign(state.meta, { title: val('f-title'), ref: val('f-ref2'), currency: $('#f-cur').value, analyst: val('f-analyst') }); });
+}
+function openEditorFor(id) {
+  const p = state.people.find(x => x.id === id); if (p) return editPerson(p);
+  const a = state.accounts.find(x => x.id === id); if (a) return editAccount(a);
+  const t = state.transactions.find(x => x.id === id); if (t) return editTx(t);
+  const n = state.notes.find(x => x.id === id); if (n) return editNote(n);
+  const q = state.questions.find(x => x.id === id); if (q) return editQuestion(q);
+}
+function addByKind(k) {
+  if (['victim', 'suspect', 'other'].includes(k)) editPerson(null, k);
+  else if (k === 'account') editAccount(null);
+  else if (k === 'transaction') editTx(null);
+  else if (k === 'note') editNote(null);
+  else if (k === 'question') editQuestion(null);
+}
+function addChooser() {
+  openDialog('What do you want to add?', `<div class="choice" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${[['victim', 'Victim'], ['suspect', 'Alleged fraudster'], ['other', 'Other party'], ['account', 'Account or wallet'], ['transaction', 'Transaction'], ['note', 'Note'], ['question', 'Question'], ['paste', 'Paste many rows']].map(([k, l]) => `<button type="button" data-addk="${k}" style="padding:12px">${l}</button>`).join('')}</div>`, null, null);
+}
+$('#dlg-body').addEventListener('click', e => { const b = e.target.closest('[data-addk]'); if (!b) return; dlg.close(); const k = b.dataset.addk; setTimeout(() => k === 'paste' ? openPaste() : addByKind(k), 10); });
+
+/* ---------- Paste many transactions ---------- */
+const AI_PROMPT = `Convert the case notes below into one line per payment, using exactly this format and nothing else:
+Date | From | To | Amount | Method or reference | Notes
+- Date as YYYY-MM-DD
+- From / To: the account holder's name followed by the bank and account number in brackets, e.g. Margaret Holloway (Barclays 43891022). Use "Unknown" for an unknown holder.
+- Amount as a plain number, e.g. 18000
+- No headings, no bullet points, no extra text.
+
+Case notes:
+`;
+function parseSide(s) {
+  s = s.trim(); if (!s) return null;
+  const m = s.match(/^(.*?)\s*\((.*)\)\s*$/);
+  let name = m ? m[1].trim() : s, acct = m ? m[2].trim() : '';
+  if (!m && /\d{4,}/.test(s)) { acct = s; name = ''; }
+  if (/^unknown$/i.test(name)) name = '';
+  const numMatch = acct.match(/([A-Z]{2}\d{2}[A-Z0-9 ]{8,}|[a-z0-9]{20,}|[\d][\d\s-]{3,}\d)\s*$/i);
+  const number = numMatch ? numMatch[1].trim() : '';
+  const institution = number ? acct.slice(0, acct.length - numMatch[0].length).replace(/[#,:\s]+$/, '').trim() : acct;
+  return { name, number, institution, raw: s };
+}
+function findAccount(side, pending) {
+  const all = [...state.accounts, ...pending];
+  if (side.number) { const n = norm(side.number); const hit = all.find(a => norm(a.number) === n || (n.length >= 6 && norm(a.number).endsWith(n))); if (hit) return hit; }
+  if (side.name) {
+    const p = state.people.find(p => [p.name, ...String(p.aliases || '').split(',')].some(x => normName(x) === normName(side.name)));
+    const holderN = normName(p ? p.name : side.name);
+    const mine = all.filter(a => normName(a.holder) === holderN && (!side.institution || normName(a.institution) === normName(side.institution)));
+    if (mine.length === 1 && !side.number) return mine[0];
+  }
+  return null;
+}
+function parsePaste(text, commit) {
+  const pending = [], rows = [];
+  text.split(/\r?\n/).forEach(line => {
+    if (!line.trim() || /^\s*date\s*[|\t,]/i.test(line)) return;
+    const parts = (line.includes('|') ? line.split('|') : line.includes('\t') ? line.split('\t') : line.split(',')).map(x => x.trim());
+    const [d, fromS, toS, amt, method = '', ...rest] = parts;
+    const date = parseDate(d), amount = parseAmount(amt);
+    const from = parseSide(fromS || ''), to = parseSide(toS || '');
+    const r = { date, amount, from, to, method, notes: rest.join(' | '), ok: !!(from && to && amount), fromAcc: null, toAcc: null, fromNew: false, toNew: false };
+    if (r.ok) ['from', 'to'].forEach(k => {
+      let a = findAccount(r[k], pending);
+      if (!a) {
+        const pr = state.people.find(p => normName(p.name) === normName(r[k].name) || String(p.aliases || '').split(',').some(x => normName(x) === normName(r[k].name)));
+        a = { id: uid('a'), holder: pr ? pr.name : r[k].name, institution: r[k].institution, number: r[k].number, type: /^(bc1|0x|[13][a-km-z])/i.test(r[k].number) && r[k].number.length > 24 ? 'crypto' : 'bank', notes: 'Added from pasted data.' };
+        pending.push(a); r[k + 'New'] = true;
+      }
+      r[k + 'Acc'] = a;
+    });
+    rows.push(r);
+  });
+  if (commit) {
+    state.accounts.push(...pending);
+    const METHOD = /payment|transfer|chaps|bacs|faster|wire|sepa|swift|card|cash|cheque|check|crypto|zelle|paypal|gift/i;
+    rows.filter(r => r.ok).forEach(r => {
+      const isMethod = METHOD.test(r.method);
+      state.transactions.push({ id: uid('t'), date: r.date, from: r.fromAcc.id, to: r.toAcc.id, amount: r.amount, method: isMethod ? r.method : '', reference: isMethod ? '' : r.method, notes: r.notes });
+    });
+    return rows.filter(r => r.ok).length;
+  }
+  return { rows, pending };
+}
+function openPaste() {
+  openDialog('Paste transactions', `
+    <p style="margin:4px 0 6px;font-size:12.5px;color:var(--ink-2)">One payment per line. Columns can be separated by <b>|</b>, tabs (straight from Excel) or commas:</p>
+    <div class="mono" style="font-size:11.5px;padding:8px 10px;border-radius:8px;background:var(--sunken);overflow-x:auto;white-space:nowrap">Date | From | To | Amount | Method or reference | Notes</div>
+    <p class="hint" style="font-size:11.5px;color:var(--muted);margin:6px 0 0">Write From and To as <span class="mono">Name (Bank 12345678)</span>. Existing accounts are matched by number; new ones are created for you.</p>
+    <div class="field"><label for="f-paste">Rows</label><textarea class="input mono" id="f-paste" style="min-height:130px;font-size:12px;white-space:pre" placeholder="2026-03-02 | Margaret Holloway (Barclays 43891022) | Unknown (Wise 88112093) | 2500 | Faster Payment | Final 'release' fee"></textarea></div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn small" type="button" id="copy-ai">Copy a prompt for ChatGPT / Claude</button><span class="hint" style="font-size:11px;color:var(--muted);align-self:center">Paste it with your case notes to get rows in this format.</span></div>
+    <div class="paste-preview" id="paste-prev" hidden></div>`,
+    () => { const n = parsePaste(val('f-paste'), true); if (!n) { toast('No complete rows to add yet'); return false; } toast(`Added ${n} transaction${n > 1 ? 's' : ''}`); }, null, 'Add to case');
+  const upd = () => {
+    const { rows } = parsePaste($('#f-paste').value, false);
+    const box = $('#paste-prev'); box.hidden = !rows.length;
+    box.innerHTML = `<table><thead><tr><th>Date</th><th>From</th><th>To</th><th>Amount</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr><td class="mono">${r.date || '—'}</td><td>${esc(r.from?.raw || '—')}${r.fromNew ? ' <span class="status-pill status-open">new</span>' : ''}</td><td>${esc(r.to?.raw || '—')}${r.toNew ? ' <span class="status-pill status-open">new</span>' : ''}</td><td class="mono">${r.amount ? money(r.amount) : '—'}</td><td>${r.ok ? '<span class="status-pill status-answered">Ready</span>' : '<span class="status-pill" style="background:var(--fraud-soft);color:var(--fraud)">Incomplete</span>'}</td></tr>`).join('')}</tbody></table>`;
+  };
+  $('#f-paste').addEventListener('input', upd);
+  $('#copy-ai').addEventListener('click', () => copyText(AI_PROMPT, 'Prompt copied'));
+}
+function copyText(text, msg) {
+  const fallback = () => { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (_) {} ta.remove(); toast(ok ? msg : 'Copy was blocked by the browser'); };
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(() => toast(msg), fallback); else fallback();
+}
+
+/* =====================================================================
+   Wiring
+   ===================================================================== */
+$('#case-title').addEventListener('change', e => { state.meta.title = e.target.value.trim(); save(); document.title = state.meta.title + ' · Case Map'; });
+$('#data-list').addEventListener('click', e => {
+  const add = e.target.closest('[data-add]'); if (add) return addByKind(add.dataset.add);
+  const row = e.target.closest('[data-row]'); if (row) { if (mainView !== 'map') setView('map'); selectNode(row.dataset.row, { center: true, fromList: true }); }
+});
+$('#data-list').addEventListener('dblclick', e => { const row = e.target.closest('[data-row]'); if (row) openEditorFor(row.dataset.row); });
+$('#panel-right').addEventListener('click', e => {
+  const tab = e.target.closest('[data-rtab]'); if (tab) { rightTab = tab.dataset.rtab; renderRight(); return; }
+  const fd = e.target.closest('[data-finding]');
+  if (fd) {
+    focusFinding = focusFinding === fd.dataset.finding ? null : fd.dataset.finding; selected = null; edgeDetail = null;
+    if (mainView !== 'map') setView('map');
+    applyHighlight(); renderRight();
+    if (focusFinding) { const fnd = A.findings.find(x => x.id === focusFinding); centerOn(fnd.nodes); if (window.matchMedia('(max-width:920px)').matches) closeDrawers(); }
+    return;
+  }
+  const ed = e.target.closest('[data-edit]'); if (ed) return openEditorFor(ed.dataset.edit);
+  const go = e.target.closest('[data-goto]'); if (go) { if (mainView !== 'map') setView('map'); return selectNode(go.dataset.goto, { center: true }); }
+  const rw = e.target.closest('[data-row]'); if (rw) return selectNode(rw.dataset.row, { center: true });
+  const sg = e.target.closest('[data-suggest]');
+  if (sg) { const s = A.suggested[+sg.dataset.suggest]; state.questions.push({ id: uid('q'), text: s.text, status: 'open', answer: '' }); save(); renderAll(); toast('Question added'); return; }
+  if (e.target.id === 'q-add-btn') { const t = val('q-new'); if (!t) { toast('Write the question first'); return; } state.questions.push({ id: uid('q'), text: t, status: 'open', answer: '' }); save(); renderAll(); toast('Question added'); }
+});
+$('#tl-inner').addEventListener('click', e => { const r = e.target.closest('[data-row]'); if (r) { selected = r.dataset.row; edgeDetail = null; rightTab = 'detail'; renderRight(); renderLeft(); } });
+$('#tl-inner').addEventListener('dblclick', e => { const r = e.target.closest('[data-row]'); if (r) openEditorFor(r.dataset.row); });
+
+function setView(v) {
+  mainView = v;
+  $$('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  $('#viewport').hidden = v !== 'map'; $('#timeline').hidden = v !== 'timeline';
+  $('.map-right').hidden = v !== 'map'; $('.mapzoom').hidden = v !== 'map'; $('#legend').hidden = v !== 'map';
+  if (v === 'map') renderMap(); else renderTimeline();
+}
+$$('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+$('#layers').addEventListener('click', e => {
+  const b = e.target.closest('[data-layer]'); if (!b) return;
+  layers[b.dataset.layer] = !layers[b.dataset.layer]; b.setAttribute('aria-pressed', layers[b.dataset.layer]);
+  drawEdges(); applyHighlight();
+});
+$('#zoom-in').addEventListener('click', () => { const r = vp.getBoundingClientRect(); zoomAt(1.2, r.width / 2, r.height / 2); });
+$('#zoom-out').addEventListener('click', () => { const r = vp.getBoundingClientRect(); zoomAt(1 / 1.2, r.width / 2, r.height / 2); });
+$('#zoom-fit').addEventListener('click', fit);
+$('#btn-focus').addEventListener('click', () => {
+  const on = $('#app').classList.toggle('focus');
+  $('#btn-focus span').textContent = on ? 'Show panels' : 'Focus map';
+  requestAnimationFrame(fit);
+});
+$('#tidy').addEventListener('click', () => { state.pos = {}; save(); fitPending = true; renderMap(); toast('Layout tidied'); });
+
+// Case menu
+const menu = $('#case-menu');
+$('#btn-case').addEventListener('click', e => {
+  e.stopPropagation();
+  if (!menu.hidden) { menu.hidden = true; return; }
+  const r = e.currentTarget.getBoundingClientRect();
+  menu.hidden = false; menu.style.top = (r.bottom + 6) + 'px'; menu.style.left = Math.max(8, Math.min(window.innerWidth - menu.offsetWidth - 8, r.right - menu.offsetWidth)) + 'px';
+});
+document.addEventListener('click', e => { if (!menu.hidden && !menu.contains(e.target)) menu.hidden = true; });
+let pendingReset = null;
+menu.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const act = b.dataset.act;
+  if ((act === 'new' || act === 'sample') && pendingReset !== act) {
+    pendingReset = act; b.dataset.label = b.dataset.label || b.innerHTML;
+    b.innerHTML = `<b style="color:var(--fraud)">Replace the current case? Click again</b>`;
+    setTimeout(() => { if (pendingReset === act) { pendingReset = null; b.innerHTML = b.dataset.label; } }, 3500);
+    return;
+  }
+  menu.hidden = true;
+  if (b.dataset.label) { b.innerHTML = b.dataset.label; }
+  pendingReset = null;
+  if (act === 'export') {
+    try {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = (state.meta.ref || 'case') + '.json'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast('Case file downloaded');
+    } catch (_) { copyText(JSON.stringify(state), 'Download blocked here, so the case file was copied instead'); }
+  }
+  if (act === 'copy') copyText(JSON.stringify(state, null, 2), 'Case file copied');
+  if (act === 'import') $('#file-in').click();
+  if (act === 'paste') openPaste();
+  if (act === 'settings') editSettings();
+  if (act === 'sample') { state = exampleCase(); selected = focusFinding = null; fitPending = true; save(); renderAll(); toast('Example case loaded'); }
+  if (act === 'new') { state = emptyCase(); selected = focusFinding = null; fitPending = true; save(); renderAll(); toast('New empty case started'); }
+});
+$('#file-in').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const rd = new FileReader();
+  rd.onload = () => { try { state = sanitize(JSON.parse(rd.result)); selected = focusFinding = null; fitPending = true; save(); renderAll(); toast('Opened ' + file.name); } catch (_) { toast('That file is not a Case Map file'); } };
+  rd.readAsText(file); e.target.value = '';
+});
+// Paste a case file anywhere (outside inputs) to open it
+document.addEventListener('paste', e => {
+  if (e.target.closest('input, textarea') || dlg.open) return;
+  const t = e.clipboardData?.getData('text') || '';
+  if (/^\s*\{[\s\S]*"transactions"/.test(t)) { try { state = sanitize(JSON.parse(t)); fitPending = true; save(); renderAll(); toast('Case file opened from clipboard'); } catch (_) {} }
+});
+$('#btn-paste').addEventListener('click', openPaste);
+$('#m-add').addEventListener('click', addChooser);
+
+// Theme
+const THEME_KEY = 'case-map-theme';
+function setTheme(t) { if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; }
+try { setTheme(localStorage.getItem(THEME_KEY)); } catch (_) {}
+$('#btn-theme').addEventListener('click', () => {
+  const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  const next = dark ? 'light' : 'dark'; setTheme(next); try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+});
+
+// Mobile drawers
+function closeDrawers() { $$('.panel').forEach(p => p.classList.remove('open')); $('#scrim').hidden = true; }
+$$('[data-open-drawer]').forEach(b => b.addEventListener('click', () => { closeDrawers(); $('#' + b.dataset.openDrawer).classList.add('open'); $('#scrim').hidden = false; }));
+$$('[data-close-drawer]').forEach(b => b.addEventListener('click', closeDrawers));
+$('#scrim').addEventListener('click', closeDrawers);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !dlg.open) { selected = null; focusFinding = null; edgeDetail = null; applyHighlight(); renderRight(); renderLeft(); closeDrawers(); }
+});
+let rsT; window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { if (mainView === 'map') fit(); }, 150); });
+
+applyView();
+renderAll();
+if (document.fonts?.ready) document.fonts.ready.then(() => { if (mainView === 'map') { fitPending = true; renderMap(); } });
+})();
+</script>
+</body>
+</html>
