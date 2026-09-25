@@ -364,14 +364,46 @@ textarea.input{min-height:76px;resize:vertical;line-height:1.5}
 .s-split{display:grid;grid-template-columns:minmax(260px,.8fr) 1.6fr;gap:40px;flex:1;min-height:0;margin-top:10px}
 .s-map{flex:1;min-height:0;position:relative;border-radius:18px;border:1px solid var(--line);background:radial-gradient(800px 500px at 30% 20%,rgba(87,178,255,.06),transparent 60%);overflow:hidden}
 .s-map svg{position:absolute;inset:0;width:100%;height:100%}
-.cover-map{position:absolute;inset:38% 2% 25% 34%;border:0;background:none;opacity:.55;-webkit-mask-image:linear-gradient(90deg,transparent,#000 35%);mask-image:linear-gradient(90deg,transparent,#000 35%);pointer-events:none}
-.s-title,.s-lede,.s-kicker{position:relative;z-index:1}
+.slide.cover{justify-content:flex-start}
+.s-bg{position:absolute;inset:0;opacity:.9}
+.s-bg svg{position:absolute;inset:0;width:100%;height:100%}
+.s-shade{position:absolute;inset:0;background:linear-gradient(90deg,var(--bg) 0%,color-mix(in srgb,var(--bg) 86%,transparent) 42%,color-mix(in srgb,var(--bg) 20%,transparent) 100%),linear-gradient(0deg,var(--bg) 0%,transparent 38%);pointer-events:none}
+.present .s-shade{background:linear-gradient(90deg,#070c18 0%,rgba(7,12,24,.86) 42%,rgba(7,12,24,.2) 100%),linear-gradient(0deg,#070c18 0%,transparent 38%)}
+:root[data-look="light"] .present .s-shade{background:linear-gradient(90deg,#f4f6fb 0%,rgba(244,246,251,.88) 42%,rgba(244,246,251,.25) 100%),linear-gradient(0deg,#f4f6fb 0%,transparent 38%)}
+.slide>*:not(.s-bg):not(.s-shade){position:relative;z-index:1}
+.s-vhead{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:30px;align-items:center}
+.s-vhead .s-av{margin:0}
+.s-vhead .s-facts{flex-direction:row;flex-wrap:wrap;gap:6px 26px;margin-top:14px;max-width:none}
+.s-vloss{text-align:right}
+.s-av{width:clamp(72px,8vw,112px);height:clamp(72px,8vw,112px);font:400 clamp(26px,3vw,40px)/1 var(--serif);margin-top:20px;box-shadow:inset 0 0 0 2px var(--c),0 0 0 10px var(--soft),0 0 60px var(--soft)}
+.s-big{font:400 clamp(38px,4.6vw,68px)/1 var(--serif);margin-top:14px}
+.s-biglabel{font:600 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.s-facts{margin:22px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;font-size:clamp(14px,1.3vw,17px);color:var(--muted);max-width:40ch}
+.s-facts li{padding-left:18px;position:relative}
+.s-facts li::before{content:"";position:absolute;left:0;top:.55em;width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.s-cap{font-size:clamp(14px,1.3vw,18px);color:var(--muted);max-width:90ch;margin:10px 0 0;line-height:1.5}
+.s-cap b{color:inherit}
+.s-graphic{flex:1;min-height:0;display:flex;align-items:center;margin-top:18px}
+.s-graphic svg{width:100%;height:100%;max-height:100%}
+.slide.on .tlg-line{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 2.4s cubic-bezier(.4,0,.2,1) .3s forwards}
+.slide.on .tlg-dot{transform-box:fill-box;transform-origin:center;animation:pop .5s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes pop{from{transform:scale(0);opacity:0}}
+.s-qgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:30px;max-width:1300px}
+.s-qcard{display:grid;grid-template-columns:44px 1fr;gap:4px 16px;padding:20px 22px;border-radius:16px;border:1px solid var(--gold);background:var(--panel);font-size:clamp(14px,1.35vw,19px);line-height:1.4}
+.slide.on .s-qcard{animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.s-qcard span{width:40px;height:40px;border-radius:50%;background:var(--gold);color:var(--gold-ink);display:grid;place-items:center;font:700 16px var(--sans);grid-row:span 2}
+.s-qcard p{margin:0}
+.s-qcard small{color:var(--muted);font:600 10px var(--sans);letter-spacing:.12em;text-transform:uppercase}
+.s-qcard.sug{border-style:dashed;border-color:var(--line-2);background:transparent}
+.s-qcard.sug span{background:var(--line-2);color:var(--text)}
 .s-bars{display:flex;flex-direction:column;gap:18px;margin-top:36px;max-width:1000px}
-.s-bar{display:grid;grid-template-columns:220px 1fr 140px;gap:18px;align-items:center;font-size:17px}
+.s-bar{display:grid;grid-template-columns:52px 230px 1fr 160px;gap:18px;align-items:center;font-size:18px}
+.s-bar .av{width:48px;height:48px;font-size:15px}
 .s-bar .trk{height:14px;border-radius:7px;background:var(--line);overflow:hidden}
 .s-bar .trk i{display:block;height:100%;background:linear-gradient(90deg,var(--victim),var(--fraud));border-radius:7px;width:0;transition:width 1.1s cubic-bezier(.2,.8,.2,1) .2s}
 .slide.on .s-bar .trk i{width:var(--w)}
-.s-bar b{font:500 17px var(--mono);text-align:right}
+.s-bar b{font:400 30px var(--serif);text-align:right}
 .s-list{margin-top:28px;display:flex;flex-direction:column;gap:12px;max-width:1100px;overflow:hidden}
 .s-q{display:grid;grid-template-columns:40px 1fr;gap:14px;font-size:clamp(15px,1.6vw,21px);line-height:1.4;padding:14px 0;border-bottom:1px solid var(--line)}
 .s-q span{font:400 26px/1 var(--serif);color:var(--gold)}
@@ -409,7 +441,10 @@ textarea.input{min-height:76px;resize:vertical;line-height:1.5}
   .focus-banner span.muted{display:none}
   .s-split{grid-template-columns:1fr}
   .s-kpis{grid-template-columns:1fr 1fr}
-  .s-bar{grid-template-columns:110px 1fr 90px;font-size:13px}
+  .s-bar{grid-template-columns:36px 90px 1fr 90px;font-size:13px;gap:10px}
+  .s-bar .av{width:34px;height:34px;font-size:11px}
+  .s-bar b{font-size:18px}
+  .s-qgrid{grid-template-columns:1fr}
 }
 @media (min-width:901px){ .scrim{display:none!important} }
 @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
@@ -510,7 +545,7 @@ textarea.input{min-height:76px;resize:vertical;line-height:1.5}
     <button class="btn ghost small" id="p-prev" type="button">← Back</button>
     <div class="p-dots" id="p-dots"></div>
     <button class="btn ghost small" id="p-next" type="button">Next →</button>
-    <button class="btn small" id="p-pptx" type="button">Save as PowerPoint</button>
+    <button class="btn small primary" id="p-pptx" type="button">Save these slides (.pptx)</button>
     <button class="btn small" id="p-exit" type="button">Exit <kbd>Esc</kbd></button>
   </div>
 </div>
@@ -1173,8 +1208,8 @@ function trailFor(id) {
     const t = A.trails.get(id); t.reached.forEach(r => { const q = t.pathTo(r); q.ids.forEach(x => n.add(x)); q.es.forEach(x => e.add(x)); });
   } else {
     accIds.forEach(acc => (A.reachedBy.get(acc) || []).forEach(v => { const q = A.trails.get(v).pathTo(acc); q.ids.forEach(x => n.add(x)); q.es.forEach(x => e.add(x)); n.add(v); }));
-    A.edges.filter(x => x.type === 'money' && (accIds.includes(x.from) || accIds.includes(x.to))).forEach(x => { e.add(x.id); n.add(x.from); n.add(x.to); });
   }
+  A.edges.filter(x => x.type === 'money' && (accIds.includes(x.from) || accIds.includes(x.to))).forEach(x => { e.add(x.id); n.add(x.from); n.add(x.to); });
   A.edges.forEach(x => { if (x.type !== 'money' && [id, ...accIds].some(k => x.from === k || x.to === k)) { e.add(x.id); n.add(x.from); n.add(x.to); } });
   [...n].forEach(x => { const o = A.ownerId.get(x); if (o) n.add(o); });
   return { n, e };
@@ -1610,53 +1645,118 @@ function standaloneSVG(bounds, hs) {
   const clone = liveSVG(b, hs, false);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${b.w}" height="${b.h}" viewBox="${b.x} ${b.y} ${b.w} ${b.h}" class="${hs ? 'dim' : ''}"><style>${css}\nsvg:root{${tok}}</style><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="${cs.getPropertyValue('--bg').trim()}"/>${clone.innerHTML}</svg>`;
 }
-async function mapPNG(bounds, hs, scale = 2) {
-  const b = bounds || layoutBounds, k = Math.min(scale, 6000 / b.w, 6000 / b.h);
+async function svgToCanvas(svgStr, w, h, scale = 2) {
+  const k = Math.min(scale, 6400 / w, 6400 / h);
   const img = new Image();
-  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(standaloneSVG(b, hs)); });
-  const c = document.createElement('canvas'); c.width = Math.round(b.w * k); c.height = Math.round(b.h * k);
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr); });
+  const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-  return { canvas: c, w: b.w, h: b.h };
+  return { canvas: c, w, h };
+}
+async function mapPNG(bounds, hs, scale = 2) { const b = bounds || layoutBounds; return svgToCanvas(standaloneSVG(b, hs), b.w, b.h, scale); }
+function aspectBounds(b, ratio, pad = 0) {
+  b = { x: b.x - pad, y: b.y - pad, w: b.w + pad * 2, h: b.h + pad * 2 };
+  if (b.w / b.h < ratio) { const nw = b.h * ratio; b.x -= (nw - b.w) / 2; b.w = nw; } else { const nh = b.w / ratio; b.y -= (nh - b.h) / 2; b.h = nh; }
+  return b;
 }
 async function exportPNG() {
-  try { const { canvas } = await mapPNG(null, highlightSet()); const blob = await new Promise(r => canvas.toBlob(r, 'image/png')); await saveFile(`${fileBase()}-map.png`, blob); }
+  try { const { canvas } = await mapPNG(null, highlightSet(), 2.5); const blob = await new Promise(r => canvas.toBlob(r, 'image/png')); await saveFile(`${fileBase()}-map.png`, blob); }
   catch (_) { toast('This browser could not draw the map image'); }
 }
-function exportCSV() {
-  const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const rows = [['Date', 'From holder', 'From institution', 'From account', 'To holder', 'To institution', 'To account', 'Amount', 'Currency', 'Method', 'Reference', 'Notes']];
-  state.transactions.slice().sort(byDate).forEach(t => { const f = A.accById.get(t.from), to = A.accById.get(t.to); rows.push([t.date, accHolderName(t.from), f?.institution, f?.number, accHolderName(t.to), to?.institution, to?.number, t.amount, state.meta.currency, t.method, t.reference, t.notes]); });
-  saveFile(`${fileBase()}-payments.csv`, '﻿' + rows.map(r => r.map(q).join(',')).join('\r\n'));
-}
 function exportJSON() { saveFile(`${fileBase()}.json`, JSON.stringify(state, null, 2)); }
+const tok = n => getComputedStyle(document.documentElement).getPropertyValue('--' + n).trim();
+
+/* ---------- timeline graphic: cumulative loss + payments sized by amount ---------- */
+function timelineGraphic(W = 1600, H = 600) {
+  const txs = state.transactions.filter(t => t.date).sort(byDate);
+  if (!txs.length) return null;
+  const notes = state.notes.filter(n => n.date);
+  const all = [...txs.map(t => t.date), ...notes.map(n => n.date)].sort();
+  const t0 = Date.parse(all[0]), span = Math.max(7 * 864e5, Date.parse(all[all.length - 1]) - t0), pad = span * 0.04;
+  const L = 190, R = W - 190, X = d => L + (Date.parse(d) - t0 + pad) / (span + 2 * pad) * (R - L);
+  const c = { text: tok('text'), muted: tok('muted'), faint: tok('faint'), line: tok('line-2'), victim: tok('victim'), money: tok('money'), fraud: tok('fraud'), note: tok('note') };
+  const SANS = 'Instrument Sans, Segoe UI, Helvetica, Arial, sans-serif', MONO = 'JetBrains Mono, Consolas, Menlo, monospace', SERIF = 'Instrument Serif, Georgia, serif';
+  const topY = 60, baseY = 250, lossY = 345, moveY = 450, noteY = 535;
+  const loss = txs.filter(isLossTx), total = loss.reduce((s, t) => s + t.amount, 0) || 1;
+  const yOf = v => baseY - (baseY - topY) * v / total;
+  const maxA = Math.max(...txs.map(t => t.amount)), rad = a => 6 + 24 * Math.sqrt(a / maxA);
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  // month grid
+  const d0 = new Date(t0 - pad); let m = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth() + 1, 1));
+  while (m.getTime() < t0 + span + pad) { const iso = m.toISOString().slice(0, 10), x = X(iso);
+    s += `<line x1="${x}" x2="${x}" y1="${topY - 20}" y2="${noteY + 18}" stroke="${c.line}" stroke-opacity=".45" stroke-dasharray="2 6"/><text x="${x + 6}" y="${H - 14}" fill="${c.muted}" font-family="${MONO}" font-size="15">${MONTHS[m.getUTCMonth()]} ${m.getUTCFullYear()}</text>`;
+    m = new Date(Date.UTC(m.getUTCFullYear(), m.getUTCMonth() + 1, 1)); }
+  // cumulative loss area
+  let cum = 0, d = `M${L},${baseY} L${L},${baseY}`;
+  loss.forEach(t => { const x = X(t.date); d += ` L${x},${yOf(cum)}`; cum += t.amount; d += ` L${x},${yOf(cum)}`; });
+  d += ` L${R},${yOf(cum)}`;
+  s += `<defs><linearGradient id="tlg-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.victim}" stop-opacity=".38"/><stop offset="1" stop-color="${c.victim}" stop-opacity="0"/></linearGradient></defs>`;
+  s += `<path d="${d} L${R},${baseY} Z" fill="url(#tlg-fill)"/><path class="tlg-line" pathLength="1" d="${d}" fill="none" stroke="${c.victim}" stroke-width="3.5" stroke-linejoin="round"/>`;
+  s += `<text x="${R + 18}" y="${yOf(cum) + 10}" fill="${c.fraud}" font-family="${SERIF}" font-size="40">${esc(money(cum, true))}</text><text x="${R + 20}" y="${yOf(cum) + 34}" fill="${c.muted}" font-family="${SANS}" font-size="13" font-weight="600" letter-spacing="2">LOST IN TOTAL</text>`;
+  // lanes
+  [[lossY, 'PAID BY VICTIMS'], [moveY, 'MOVED ON'], [noteY, 'NOTES']].forEach(([y, l]) => { s += `<line x1="${L - 20}" x2="${R + 20}" y1="${y}" y2="${y}" stroke="${c.line}" stroke-opacity=".6"/><text x="16" y="${y + 5}" fill="${c.muted}" font-family="${SANS}" font-size="13" font-weight="600" letter-spacing="2">${l}</text>`; });
+  s += `<text x="16" y="${(topY + baseY) / 2}" fill="${c.muted}" font-family="${SANS}" font-size="13" font-weight="600" letter-spacing="2">VICTIM LOSSES</text><text x="16" y="${(topY + baseY) / 2 + 20}" fill="${c.faint}" font-family="${SANS}" font-size="13">running total</text>`;
+  // bubbles
+  const labelled = new Set(txs.slice().sort((a, b) => b.amount - a.amount).slice(0, 7).map(t => t.id));
+  const lastLabelX = {};
+  txs.forEach((t, i) => {
+    const lossT = isLossTx(t), y = lossT ? lossY : moveY, x = X(t.date), r = rad(t.amount), col = lossT ? c.victim : c.money;
+    s += `<circle class="tlg-dot" style="animation-delay:${(0.4 + i * 0.12).toFixed(2)}s" cx="${x}" cy="${y}" r="${r.toFixed(1)}" fill="${col}" fill-opacity=".85" stroke="${col}" stroke-width="2"/>`;
+    if (labelled.has(t.id) && (lastLabelX[y] == null || x - lastLabelX[y] > 120)) {
+      lastLabelX[y] = x;
+      s += `<text x="${x}" y="${y - r - 26}" text-anchor="middle" fill="${c.text}" font-family="${MONO}" font-size="16" font-weight="600">${esc(money(t.amount, true))}</text><text x="${x}" y="${y - r - 9}" text-anchor="middle" fill="${c.muted}" font-family="${SANS}" font-size="12.5">${esc(clip(accHolderName(t.from).split(' ').slice(-1)[0] + ' → ' + accHolderName(t.to).split(' ')[0], 26))}</text>`;
+    }
+  });
+  notes.forEach(n => { const x = X(n.date); s += `<rect x="${x - 7}" y="${noteY - 7}" width="14" height="14" rx="2" transform="rotate(45 ${x} ${noteY})" fill="${c.note}" fill-opacity=".8"/>`; });
+  return { svg: s + '</svg>', W, H };
+}
+
+/* ---------- per-victim facts ---------- */
+function victimStory(v) {
+  const accIds = state.accounts.filter(a => A.ownerId.get(a.id) === v.id).map(a => a.id);
+  const pays = state.transactions.filter(t => accIds.includes(t.from) && A.ownerId.get(t.to) !== v.id).sort(byDate);
+  const tr = A.trails.get(v.id), reached = tr ? tr.reached : [];
+  const holders = [...new Set(reached.map(id => A.ownerId.get(id)).filter(Boolean))].map(id => A.personById.get(id)).filter(p => p.role !== 'victim');
+  const ends = reached.filter(id => !state.transactions.some(t => t.from === id));
+  const facts = [];
+  if (pays.length) facts.push(`${pays.length} payment${pays.length > 1 ? 's' : ''}${pays[0].date ? `, ${fmtDate(pays[0].date)} to ${fmtDate(pays[pays.length - 1].date)}` : ''}`);
+  if (holders.length) facts.push(`Money reached ${holders.map(p => p.name).join(', ')}`);
+  if (ends.length) facts.push(`Last seen in ${ends.map(id => accLabel(A.accById.get(id))).join(', ')}`);
+  const hs = trailFor(v.id);
+  const frame = [...hs.n].filter(id => { const k = A.nodeMap.get(id)?.kind; return k !== 'note' && k !== 'question'; });
+  return { v, loss: A.lossBy.get(v.id) || 0, facts, hs, frame, reachedCount: reached.length };
+}
+function keyLinks() { return A.findings.filter(f => f.sev === 'high' && f.kind !== 'Money trail').slice(0, 4); }
 
 /* ---------- presenter ---------- */
 let slides = [], slideIdx = 0;
-function findingSlides() { return A.findings.filter(f => f.sev === 'high').slice(0, 6); }
 function buildSlides() {
-  const S = state, keys = findingSlides();
-  const victims = S.people.filter(p => p.role === 'victim').map(p => ({ p, l: A.lossBy.get(p.id) || 0 })).sort((a, b) => b.l - a.l);
-  const maxL = Math.max(1, ...victims.map(v => v.l));
-  const openQ = S.questions.filter(q => q.status !== 'answered');
+  const S = state, victims = S.people.filter(p => p.role === 'victim').map(victimStory).sort((a, b) => b.loss - a.loss);
+  const maxL = Math.max(1, ...victims.map(v => v.loss)), openQ = S.questions.filter(q => q.status !== 'answered');
   const involved = new Set(A.edges.filter(e => e.type === 'money').flatMap(e => [e.from, e.to])).size;
   const out = [];
-  out.push({ html: `<div class="s-kicker">${esc(S.meta.ref)} · Case briefing · ${fmtDate(new Date().toISOString().slice(0, 10))}</div><h1 class="s-title">${esc(S.meta.title || 'Untitled case')}</h1><p class="s-lede">${caseSummary().replace(/<em>/g, '<b>').replace(/<\/em>/g, '</b>')}</p><div class="s-map cover-map"></div>
-    <div class="s-kpis"><div class="s-kpi"><b>${victims.length}</b><span>Victims</span></div><div class="s-kpi"><b style="color:var(--fraud)">${money(A.totalLoss, true)}</b><span>Reported loss</span></div><div class="s-kpi"><b>${involved}</b><span>Accounts in the money trail</span></div><div class="s-kpi"><b style="color:var(--question)">${openQ.length}</b><span>Open questions</span></div></div>` });
-  out.push({ html: `<div class="s-kicker">Follow the money</div><h2 class="s-title md">How the money moved</h2><div class="s-map" style="margin-top:22px" data-map="all"></div>`, map: { bounds: null, hs: null, particles: true } });
-  keys.forEach((f, i) => out.push({ html: `<div class="s-split"><div style="display:flex;flex-direction:column;justify-content:center"><div class="s-kicker">Key link ${i + 1} of ${keys.length} · ${esc(f.kind)}</div><h2 class="s-title md">${esc(f.title)}</h2><p class="s-lede">${f.text}</p></div><div class="s-map" data-map="f"></div></div>`, map: { bounds: boundsOf(f.nodes), hs: hsForIds(f.nodes, f.edges), particles: true } }));
-  if (victims.length) out.push({ html: `<div class="s-kicker">Impact</div><h2 class="s-title md">${money(A.totalLoss)} reported lost by ${victims.length} ${victims.length > 1 ? 'people' : 'person'}</h2><div class="s-bars">${victims.map(v => `<div class="s-bar"><span>${esc(v.p.name)}</span><span class="trk"><i style="--w:${(v.l / maxL * 100).toFixed(1)}%"></i></span><b>${money(v.l)}</b></div>`).join('')}</div>` });
-  const txs = S.transactions.slice().sort(byDate);
-  if (txs.length) out.push({ html: `<div class="s-kicker">Chronology</div><h2 class="s-title md">${txs.length} payments${txs[0].date ? `, ${fmtDate(txs[0].date)} to ${fmtDate(txs[txs.length - 1].date)}` : ''}</h2><div class="s-list">${txs.slice(0, 9).map(t => `<div class="s-tx"><span class="mono">${fmtDate(t.date)}</span><span>${esc(accHolderName(t.from))} → ${esc(accHolderName(t.to))}</span><span class="mono">${money(t.amount)}</span></div>`).join('')}${txs.length > 9 ? `<div class="s-tx" style="color:var(--muted)"><span></span><span>and ${txs.length - 9} more in the case file</span><span></span></div>` : ''}</div>` });
-  out.push({ html: `<div class="s-kicker">Next steps</div><h2 class="s-title md">${openQ.length ? `${openQ.length} open question${openQ.length > 1 ? 's' : ''}` : 'No open questions'}</h2><div class="s-list">${openQ.slice(0, 6).map((q, i) => `<div class="s-q"><span>${i + 1}</span><div>${esc(q.text)}</div></div>`).join('')}${A.suggested.length ? `<p class="s-lede" style="margin-top:14px">The map also flagged ${A.suggested.length} gap${A.suggested.length > 1 ? 's' : ''} worth asking about.</p>` : ''}</div>` });
+  out.push({ cls: 'cover', html: `<div class="s-bg" data-mount="cover"></div><div class="s-shade"></div><div class="s-kicker">${esc(S.meta.ref)} · Case briefing · ${fmtDate(new Date().toISOString().slice(0, 10))}</div><h1 class="s-title">${esc(S.meta.title || 'Untitled case')}</h1><p class="s-lede">${caseSummary().replace(/<em>/g, '<b>').replace(/<\/em>/g, '</b>')}</p>
+    <div class="s-kpis"><div class="s-kpi"><b>${victims.length}</b><span>Victims</span></div><div class="s-kpi"><b style="color:var(--fraud)">${money(A.totalLoss, true)}</b><span>Reported loss</span></div><div class="s-kpi"><b>${involved}</b><span>Accounts in the trail</span></div><div class="s-kpi"><b style="color:var(--question)">${openQ.length}</b><span>Open questions</span></div></div>`,
+    mount: { cover: { bounds: null, hs: null, particles: true } } });
+  out.push({ html: `<div class="s-kicker">Follow the money</div><h2 class="s-title md">How the money moved</h2><div class="s-map" style="margin-top:22px" data-mount="m"></div>`, mount: { m: { bounds: null, hs: null, particles: true } } });
+  victims.forEach((st, i) => out.push({ html: `<div class="s-vhead r-victim"><span class="av s-av">${esc(initials(st.v.name))}</span><div style="min-width:0"><div class="s-kicker">Victim ${i + 1} of ${victims.length}</div><h2 class="s-title md" style="margin-top:8px">${esc(st.v.name)}</h2><ul class="s-facts">${st.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul></div>
+      <div class="s-vloss"><div class="s-big" style="color:var(--fraud)">${money(st.loss)}</div><div class="s-biglabel">reported lost</div></div></div><div class="s-map" style="margin-top:22px" data-mount="m"></div>`,
+    mount: { m: { bounds: boundsOf(st.frame), hs: st.hs, particles: true } } }));
+  keyLinks().forEach((f, i, arr) => out.push({ html: `<div class="s-kicker">Key link ${i + 1} of ${arr.length} · ${esc(f.kind)}</div><h2 class="s-title md" style="max-width:32ch">${esc(f.title)}</h2><p class="s-cap">${f.text}</p><div class="s-map" style="margin-top:18px" data-mount="m"></div>`,
+    mount: { m: { bounds: boundsOf([...withOwners(f.nodes)]), hs: hsForIds(f.nodes, f.edges), particles: true } } }));
+  const tg = timelineGraphic();
+  if (tg) out.push({ html: `<div class="s-kicker">Chronology</div><h2 class="s-title md">How the losses built up</h2><div class="s-graphic">${tg.svg}</div>` });
+  if (victims.length) out.push({ html: `<div class="s-kicker">Impact</div><h2 class="s-title md">${money(A.totalLoss)} reported lost</h2><div class="s-bars">${victims.map(st => `<div class="s-bar r-victim"><span class="av">${esc(initials(st.v.name))}</span><span class="nm">${esc(st.v.name)}</span><span class="trk"><i style="--w:${(st.loss / maxL * 100).toFixed(1)}%"></i></span><b>${money(st.loss)}</b></div>`).join('')}</div>` });
+  const qs = [...openQ.map(q => ({ t: q.text, s: false })), ...A.suggested.map(x => ({ t: x.text, s: true }))].slice(0, 6);
+  out.push({ html: `<div class="s-kicker">Next steps</div><h2 class="s-title md">${openQ.length ? `${openQ.length} open question${openQ.length > 1 ? 's' : ''}` : 'What to ask next'}</h2><div class="s-qgrid">${qs.map((q, i) => `<div class="s-qcard ${q.s ? 'sug' : ''}" style="animation-delay:${(0.15 + i * 0.1).toFixed(2)}s"><span>${i + 1}</span><p>${esc(q.t)}</p>${q.s ? '<small>Suggested by the map</small>' : ''}</div>`).join('')}</div>` });
   return out;
 }
 function openPresenter() {
   if (!state.people.length && !state.transactions.length) { toast('Add some case data first'); return; }
   closeMenus(); stopPlay(); tlT = null; applyState();
   slides = buildSlides(); slideIdx = 0;
-  $('#slides').innerHTML = slides.map((s, i) => `<section class="slide" data-i="${i}">${s.html}</section>`).join('');
-  const cover = $('.slide[data-i="0"] .cover-map'); if (cover && layoutBounds) cover.appendChild(liveSVG(null, null, true));
-  slides.forEach((s, i) => { if (!s.map) return; const host = $(`.slide[data-i="${i}"] .s-map`); host.appendChild(liveSVG(s.map.bounds, s.map.hs, s.map.particles)); });
+  $('#slides').innerHTML = slides.map((s, i) => `<section class="slide ${s.cls || ''}" data-i="${i}">${s.html}</section>`).join('');
+  slides.forEach((s, i) => Object.entries(s.mount || {}).forEach(([k, m]) => { const host = $(`.slide[data-i="${i}"] [data-mount="${k}"]`); if (host) host.appendChild(liveSVG(m.bounds, m.hs, m.particles)); }));
   $('#p-dots').innerHTML = slides.map((_, i) => `<button type="button" data-i="${i}" aria-label="Slide ${i + 1}"></button>`).join('');
   $('#present').hidden = false;
   try { document.documentElement.requestFullscreen?.().catch(() => {}); } catch (_) {}
@@ -1676,80 +1776,124 @@ $('#p-dots').addEventListener('click', e => { const b = e.target.closest('[data-
 $('#slides').addEventListener('click', e => { if (!e.target.closest('button, a')) goSlide(slideIdx + 1); });
 $('#p-pptx').addEventListener('click', exportPPTX);
 
-/* ---------- PowerPoint ---------- */
+/* ---------- PowerPoint: visual-first deck ---------- */
 let pptxLoading = null;
 function loadPptx() {
   if (window.PptxGenJS) return Promise.resolve();
   return pptxLoading ||= new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'; s.onload = res; s.onerror = () => { pptxLoading = null; rej(new Error('load')); }; document.head.appendChild(s); });
 }
+function shadePNG(bg) {
+  const c = document.createElement('canvas'); c.width = 1600; c.height = 900; const g = c.getContext('2d');
+  const h = bg.replace('#', ''), rgb = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)).join(',');
+  let gr = g.createLinearGradient(0, 0, 1600, 0); gr.addColorStop(0, `rgba(${rgb},.97)`); gr.addColorStop(.42, `rgba(${rgb},.86)`); gr.addColorStop(1, `rgba(${rgb},.25)`);
+  g.fillStyle = gr; g.fillRect(0, 0, 1600, 900);
+  gr = g.createLinearGradient(0, 520, 0, 900); gr.addColorStop(0, `rgba(${rgb},0)`); gr.addColorStop(1, `rgba(${rgb},.96)`);
+  g.fillStyle = gr; g.fillRect(0, 520, 1600, 380);
+  return c.toDataURL('image/png');
+}
 let exporting = false;
 async function exportPPTX() {
   if (exporting) return; exporting = true; closeMenus();
-  toast('Building your PowerPoint…');
-  try { await loadPptx(); } catch (_) { toast('Could not load the PowerPoint builder. Check the internet connection.'); exporting = false; return; }
+  toast('Designing your slides…');
+  try { await loadPptx(); } catch (_) { toast('Could not load the slide builder. Check the internet connection.'); exporting = false; return; }
   try {
-    const S = state, cs = getComputedStyle(document.documentElement), hex = t => cs.getPropertyValue('--' + t).trim().replace('#', '').slice(0, 6).toUpperCase();
-    const C = { bg: hex('bg'), panel: hex('panel'), text: hex('text'), muted: hex('muted'), gold: hex('gold'), line: hex('line-2'), fraud: hex('fraud'), money: hex('money'), victim: hex('victim') };
-    const HEAD = 'Georgia', BODY = 'Segoe UI';
+    const S = state, hx = t => tok(t).replace('#', '').slice(0, 6).toUpperCase();
+    const C = { bg: hx('bg'), panel: hx('panel'), text: hx('text'), muted: hx('muted'), faint: hx('faint'), gold: hx('gold'), goldInk: hx('gold-ink'), line: hx('line-2'), fraud: hx('fraud'), money: hx('money'), victim: hx('victim') };
+    const HEAD = 'Georgia', BODY = 'Segoe UI', SW = 13.333, SH = 7.5;
     const pptx = new window.PptxGenJS(); pptx.layout = 'LAYOUT_WIDE'; pptx.title = S.meta.title || 'Case briefing'; pptx.company = 'Traceline';
-    pptx.defineSlideMaster({ title: 'TL', background: { color: C.bg }, objects: [{ text: { text: `${S.meta.ref || ''}  ·  ${S.meta.title || ''}`, options: { x: 0.5, y: 7.02, w: 9, h: 0.3, fontSize: 9, color: C.muted, fontFace: BODY } } }], slideNumber: { x: 12.3, y: 7.02, w: 0.6, h: 0.3, fontSize: 9, color: C.muted, fontFace: BODY } });
-    const kicker = (sl, t, y = 0.55) => sl.addText(t.toUpperCase(), { x: 0.6, y, w: 12, h: 0.3, fontSize: 10.5, bold: true, color: C.gold, charSpacing: 3, fontFace: BODY });
-    const title = (sl, t, y = 0.9, size = 30, w = 12.1) => sl.addText(t, { x: 0.6, y, w, h: size > 32 ? 1.9 : 1.1, fontSize: size, color: C.text, fontFace: HEAD, valign: 'top' });
-    const fitImg = (sl, img, x, y, w, h) => { const k = Math.min(w / img.w, h / img.h); sl.addImage({ data: img.canvas.toDataURL('image/png'), x: x + (w - img.w * k) / 2, y: y + (h - img.h * k) / 2, w: img.w * k, h: img.h * k }); };
-    const sym = (() => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: S.meta.currency }).formatToParts(0).find(p => p.type === 'currency').value; } catch (_) { return ''; } })();
-    const victims = S.people.filter(p => p.role === 'victim').map(p => ({ p, l: A.lossBy.get(p.id) || 0 })).sort((a, b) => b.l - a.l);
+    pptx.defineSlideMaster({ title: 'TL', background: { color: C.bg }, objects: [{ text: { text: `${S.meta.ref || ''}  ·  ${S.meta.title || ''}`, options: { x: 0.6, y: 7.05, w: 9, h: 0.28, fontSize: 9, color: C.faint, fontFace: BODY } } }], slideNumber: { x: 12.35, y: 7.05, w: 0.6, h: 0.28, fontSize: 9, color: C.faint, fontFace: BODY } });
+    const kicker = (sl, t, x = 0.6, y = 0.5) => sl.addText(t.toUpperCase(), { x, y, w: 12, h: 0.3, fontSize: 10.5, bold: true, color: C.gold, charSpacing: 3, fontFace: BODY, margin: 0 });
+    const title = (sl, t, o = {}) => sl.addText(t, { x: 0.6, y: 0.85, w: 12.1, h: 0.9, fontSize: 30, color: C.text, fontFace: HEAD, valign: 'top', margin: 0, ...o });
+    const mapImg = async (sl, b, hs, x, y, w, h, frame = true) => {
+      if (frame) sl.addShape(pptx.ShapeType.roundRect, { x, y, w, h, fill: { color: C.panel, transparency: 35 }, line: { color: C.line, width: 0.75 }, rectRadius: 0.12 });
+      const r = await mapPNG(aspectBounds(b || layoutBounds, w / h, 30), hs, 2.2);
+      sl.addImage({ data: r.canvas.toDataURL('image/png'), x: x + (frame ? 0.05 : 0), y: y + (frame ? 0.05 : 0), w: w - (frame ? 0.1 : 0), h: h - (frame ? 0.1 : 0) });
+    };
+    const avatar = (sl, name, x, y, d, col, size) => {
+      sl.addShape(pptx.ShapeType.ellipse, { x, y, w: d, h: d, fill: { color: col, transparency: 82 }, line: { color: col, width: 2 } });
+      sl.addText(initials(name), { x, y, w: d, h: d, align: 'center', valign: 'middle', fontSize: size, color: col, fontFace: HEAD, margin: 0 });
+    };
+    const victims = S.people.filter(p => p.role === 'victim').map(victimStory).sort((a, b) => b.loss - a.loss);
     const openQ = S.questions.filter(q => q.status !== 'answered');
+    const involved = new Set(A.edges.filter(e => e.type === 'money').flatMap(e => [e.from, e.to])).size;
 
+    // 1. cover: full-bleed money map behind the title
     let sl = pptx.addSlide({ masterName: 'TL' });
-    kicker(sl, `${S.meta.ref || ''} · Case briefing · ${fmtDate(new Date().toISOString().slice(0, 10))}`, 0.8);
-    title(sl, S.meta.title || 'Untitled case', 1.2, 48);
-    sl.addText(plain(caseSummary()), { x: 0.6, y: 3.2, w: 10.5, h: 1.2, fontSize: 17, color: C.muted, fontFace: BODY, valign: 'top' });
-    [[victims.length, 'VICTIMS', C.text], [money(A.totalLoss, true), 'REPORTED LOSS', C.fraud], [new Set(A.edges.filter(e => e.type === 'money').flatMap(e => [e.from, e.to])).size, 'ACCOUNTS IN THE TRAIL', C.text], [openQ.length, 'OPEN QUESTIONS', C.gold]].forEach(([v, l, c], i) => {
-      sl.addShape(pptx.ShapeType.line, { x: 0.6 + i * 3.05, y: 5.2, w: 2.8, h: 0, line: { color: C.line, width: 1 } });
-      sl.addText(String(v), { x: 0.6 + i * 3.05, y: 5.35, w: 2.9, h: 0.8, fontSize: 36, color: c, fontFace: HEAD });
-      sl.addText(l, { x: 0.6 + i * 3.05, y: 6.15, w: 2.9, h: 0.3, fontSize: 9.5, bold: true, color: C.muted, charSpacing: 2, fontFace: BODY });
+    const cov = await mapPNG(aspectBounds(layoutBounds, SW / SH, 60), null, 2);
+    sl.addImage({ data: cov.canvas.toDataURL('image/png'), x: 0, y: 0, w: SW, h: SH });
+    sl.addImage({ data: shadePNG(tok('bg')), x: 0, y: 0, w: SW, h: SH });
+    kicker(sl, `${S.meta.ref || ''} · Case briefing · ${fmtDate(new Date().toISOString().slice(0, 10))}`, 0.7, 0.8);
+    sl.addText(S.meta.title || 'Untitled case', { x: 0.7, y: 1.2, w: 7.6, h: 2.2, fontSize: 50, color: C.text, fontFace: HEAD, valign: 'top', margin: 0 });
+    sl.addText(plain(caseSummary()), { x: 0.7, y: 3.45, w: 6.6, h: 1.3, fontSize: 16, color: C.muted, fontFace: BODY, valign: 'top', margin: 0 });
+    [[victims.length, 'VICTIMS', C.text], [money(A.totalLoss, true), 'REPORTED LOSS', C.fraud], [involved, 'ACCOUNTS IN THE TRAIL', C.text], [openQ.length, 'OPEN QUESTIONS', C.gold]].forEach(([v, l, c], i) => {
+      const x = 0.7 + i * 3.05;
+      sl.addShape(pptx.ShapeType.line, { x, y: 5.35, w: 2.75, h: 0, line: { color: C.line, width: 1 } });
+      sl.addText(String(v), { x, y: 5.45, w: 2.95, h: 0.85, fontSize: 38, color: c, fontFace: HEAD, margin: 0 });
+      sl.addText(l, { x, y: 6.3, w: 2.95, h: 0.3, fontSize: 9.5, bold: true, color: C.muted, charSpacing: 2, fontFace: BODY, margin: 0 });
     });
 
+    // 2. the whole money map
     sl = pptx.addSlide({ masterName: 'TL' }); kicker(sl, 'Follow the money'); title(sl, 'How the money moved');
-    fitImg(sl, await mapPNG(null, null, 2), 0.5, 1.75, 12.3, 5.15);
+    await mapImg(sl, null, null, 0.5, 1.7, 12.33, 5.2);
 
-    const keys = findingSlides();
+    // 3. one slide per victim: their own trail lit up
+    for (let i = 0; i < Math.min(victims.length, 8); i++) {
+      const st = victims[i]; sl = pptx.addSlide({ masterName: 'TL' });
+      avatar(sl, st.v.name, 0.6, 0.55, 1.2, C.victim, 30);
+      kicker(sl, `Victim ${i + 1} of ${victims.length}`, 2.05, 0.6);
+      sl.addText(st.v.name, { x: 2.05, y: 0.9, w: 7, h: 0.7, fontSize: 30, color: C.text, fontFace: HEAD, valign: 'top', margin: 0 });
+      if (st.facts.length) sl.addText(st.facts.join('   •   '), { x: 2.05, y: 1.62, w: 7.4, h: 0.6, fontSize: 12, color: C.muted, fontFace: BODY, valign: 'top', margin: 0 });
+      sl.addText(money(st.loss), { x: 9.3, y: 0.6, w: 3.5, h: 0.85, fontSize: 40, color: C.fraud, fontFace: HEAD, align: 'right', margin: 0 });
+      sl.addText('REPORTED LOST', { x: 9.3, y: 1.45, w: 3.5, h: 0.3, fontSize: 9.5, bold: true, color: C.muted, charSpacing: 2, fontFace: BODY, align: 'right', margin: 0 });
+      await mapImg(sl, boundsOf(st.frame), st.hs, 0.5, 2.4, 12.33, 4.5);
+    }
+
+    // 4. key links: picture first, one line of caption
+    const keys = keyLinks();
     for (let i = 0; i < keys.length; i++) {
       const f = keys[i]; sl = pptx.addSlide({ masterName: 'TL' });
-      kicker(sl, `Key link ${i + 1} of ${keys.length} · ${f.kind}`);
-      sl.addText(f.title, { x: 0.6, y: 1.0, w: 4.4, h: 2.0, fontSize: 24, color: C.text, fontFace: HEAD, valign: 'top' });
-      sl.addText(plain(f.text), { x: 0.6, y: 3.1, w: 4.4, h: 3.6, fontSize: 13, color: C.muted, fontFace: BODY, valign: 'top', paraSpaceAfter: 6 });
-      sl.addShape(pptx.ShapeType.roundRect, { x: 5.3, y: 0.55, w: 7.5, h: 6.3, fill: { color: C.panel }, line: { color: C.line, width: 0.75 }, rectRadius: 0.15 });
-      fitImg(sl, await mapPNG(boundsOf(f.nodes), hsForIds(f.nodes, f.edges), 2), 5.4, 0.65, 7.3, 6.1);
+      kicker(sl, `Key link ${i + 1} of ${keys.length} · ${f.kind}`); title(sl, f.title, { fontSize: 26, h: 0.8 });
+      sl.addText(plain(f.text), { x: 0.6, y: 1.65, w: 12.1, h: 0.6, fontSize: 13, color: C.muted, fontFace: BODY, valign: 'top', margin: 0 });
+      await mapImg(sl, boundsOf([...withOwners(f.nodes)]), hsForIds(f.nodes, f.edges), 0.5, 2.35, 12.33, 4.55);
     }
 
+    // 5. timeline graphic
+    const tg = timelineGraphic();
+    if (tg) {
+      sl = pptx.addSlide({ masterName: 'TL' }); kicker(sl, 'Chronology'); title(sl, 'How the losses built up');
+      const r = await svgToCanvas(tg.svg, tg.W, tg.H, 2.2);
+      sl.addImage({ data: r.canvas.toDataURL('image/png'), x: 0.5, y: 2.0, w: 12.33, h: 12.33 * tg.H / tg.W });
+    }
+
+    // 6. impact: native avatars and bars (editable)
     if (victims.length) {
       sl = pptx.addSlide({ masterName: 'TL' }); kicker(sl, 'Impact'); title(sl, `${money(A.totalLoss)} reported lost by ${victims.length} ${victims.length > 1 ? 'people' : 'person'}`);
-      sl.addChart(pptx.ChartType.bar, [{ name: 'Reported loss', labels: victims.map(v => v.p.name), values: victims.map(v => v.l) }], {
-        x: 0.6, y: 1.9, w: 12.1, h: 4.9, barDir: 'bar', chartColors: [C.victim], barGapWidthPct: 55, catAxisOrientation: 'maxMin',
-        catAxisLabelColor: C.text, catAxisLabelFontSize: 13, catAxisLabelFontFace: BODY, catAxisLineShow: false,
-        valAxisHidden: true, valGridLine: { style: 'none' }, showValue: true, dataLabelColor: C.text, dataLabelFontSize: 12, dataLabelFormatCode: `"${sym}"#,##0`, dataLabelPosition: 'outEnd' });
+      const rows = victims.slice(0, 6), maxL = Math.max(1, ...rows.map(r => r.loss)), rh = Math.min(0.95, 4.9 / rows.length);
+      rows.forEach((st, i) => {
+        const y = 2.0 + i * rh;
+        avatar(sl, st.v.name, 0.6, y, 0.62, C.victim, 15);
+        sl.addText(st.v.name, { x: 1.4, y, w: 3.1, h: 0.62, fontSize: 16, color: C.text, fontFace: BODY, valign: 'middle', margin: 0 });
+        sl.addShape(pptx.ShapeType.roundRect, { x: 4.6, y: y + 0.23, w: 5.9, h: 0.16, fill: { color: C.line }, line: { color: C.line, width: 0 }, rectRadius: 0.08 });
+        sl.addShape(pptx.ShapeType.roundRect, { x: 4.6, y: y + 0.23, w: Math.max(0.16, 5.9 * st.loss / maxL), h: 0.16, fill: { color: C.victim }, line: { color: C.victim, width: 0 }, rectRadius: 0.08 });
+        sl.addText(money(st.loss), { x: 10.7, y, w: 2.1, h: 0.62, fontSize: 22, color: C.text, fontFace: HEAD, align: 'right', valign: 'middle', margin: 0 });
+      });
     }
 
-    const txs = S.transactions.slice().sort(byDate);
-    for (let p = 0; p < txs.length; p += 12) {
-      sl = pptx.addSlide({ masterName: 'TL' }); kicker(sl, 'Chronology'); title(sl, `Payments${txs.length > 12 ? ` (${p + 1}–${Math.min(txs.length, p + 12)} of ${txs.length})` : ''}`, 0.9, 26);
-      const hdr = ['Date', 'From', 'To', 'Amount', 'Method / reference'].map(t => ({ text: t, options: { bold: true, color: C.muted, fontSize: 9.5 } }));
-      const rows = txs.slice(p, p + 12).map(t => [fmtDate(t.date), accHolderName(t.from), accHolderName(t.to), { text: money(t.amount), options: { color: C.money, align: 'right', bold: true } }, [t.method, t.reference].filter(Boolean).join(' · ')]);
-      sl.addTable([hdr, ...rows], { x: 0.6, y: 1.75, w: 12.1, colW: [1.5, 3.1, 3.1, 1.7, 2.7], fontSize: 11, fontFace: BODY, color: C.text, border: { type: 'solid', pt: 0.5, color: C.line }, fill: { color: C.bg }, rowH: 0.36, valign: 'middle' });
-    }
-
-    sl = pptx.addSlide({ masterName: 'TL' }); kicker(sl, 'All findings'); title(sl, `${A.findings.length} findings from the case data`, 0.9, 26);
-    sl.addTable([['Priority', 'Type', 'Finding'].map(t => ({ text: t, options: { bold: true, color: C.muted, fontSize: 9.5 } })), ...A.findings.slice(0, 14).map(f => [{ text: f.sev === 'high' ? 'Key link' : f.sev === 'med' ? 'Worth checking' : 'Info', options: { color: f.sev === 'high' ? C.fraud : C.gold, bold: true } }, f.kind, f.title])],
-      { x: 0.6, y: 1.75, w: 12.1, colW: [1.7, 2.1, 8.3], fontSize: 11, fontFace: BODY, color: C.text, border: { type: 'solid', pt: 0.5, color: C.line }, fill: { color: C.bg }, rowH: 0.34 });
-
-    sl = pptx.addSlide({ masterName: 'TL' }); kicker(sl, 'Next steps'); title(sl, openQ.length ? `${openQ.length} open question${openQ.length > 1 ? 's' : ''}` : 'No open questions');
-    const qs = [...openQ.map(q => q.text), ...A.suggested.slice(0, Math.max(0, 8 - openQ.length)).map(s => s.text + '  (suggested)')].slice(0, 8);
-    if (qs.length) sl.addText(qs.map((t, i) => ({ text: t, options: { bullet: { type: 'number' }, color: t.endsWith('(suggested)') ? C.muted : C.text, breakLine: true } })), { x: 0.6, y: 1.9, w: 12, h: 4.9, fontSize: 17, fontFace: BODY, valign: 'top', paraSpaceAfter: 12 });
+    // 7. questions as cards
+    const qs = [...openQ.map(q => ({ t: q.text, s: false })), ...A.suggested.map(x => ({ t: x.text, s: true }))].slice(0, 6);
+    sl = pptx.addSlide({ masterName: 'TL' }); kicker(sl, 'Next steps'); title(sl, openQ.length ? `${openQ.length} open question${openQ.length > 1 ? 's' : ''}` : 'What to ask next');
+    qs.forEach((q, i) => {
+      const x = 0.6 + (i % 2) * 6.15, y = 1.95 + Math.floor(i / 2) * 1.65;
+      sl.addShape(pptx.ShapeType.roundRect, { x, y, w: 5.95, h: 1.45, fill: { color: C.panel }, line: { color: q.s ? C.line : C.gold, width: 1, dashType: q.s ? 'dash' : 'solid' }, rectRadius: 0.12 });
+      sl.addShape(pptx.ShapeType.ellipse, { x: x + 0.25, y: y + 0.3, w: 0.5, h: 0.5, fill: { color: q.s ? C.line : C.gold }, line: { color: q.s ? C.line : C.gold, width: 0 } });
+      sl.addText(String(i + 1), { x: x + 0.25, y: y + 0.3, w: 0.5, h: 0.5, align: 'center', valign: 'middle', fontSize: 15, bold: true, color: q.s ? C.text : C.goldInk, fontFace: BODY, margin: 0 });
+      sl.addText(q.t, { x: x + 0.95, y: y + 0.18, w: 4.8, h: q.s ? 0.85 : 1.1, fontSize: 13.5, color: C.text, fontFace: BODY, valign: 'top', margin: 0 });
+      if (q.s) sl.addText('SUGGESTED BY THE MAP', { x: x + 0.95, y: y + 1.07, w: 4.8, h: 0.25, fontSize: 8.5, bold: true, color: C.muted, charSpacing: 2, fontFace: BODY, margin: 0 });
+    });
 
     const blob = await pptx.write({ outputType: 'blob' });
     await saveFile(`${fileBase()}-briefing.pptx`, blob);
-  } catch (e) { console.error(e); toast('Could not build the PowerPoint: ' + (e.message || 'unknown error')); }
+  } catch (e) { console.error(e); toast('Could not build the slides: ' + (e.message || 'unknown error')); }
   exporting = false;
 }
 
@@ -2011,9 +2155,8 @@ $('#case-switch').addEventListener('click', e => {
     <button type="button" data-m="delete" style="color:var(--fraud)">${IC('M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13')}Delete this case</button>`);
 });
 $('#btn-export').addEventListener('click', e => openMenu(e.currentTarget, `
-  <button type="button" data-m="pptx">${IC('M4 4h16v12H4zM12 16v4M8 20h8')}<span>PowerPoint briefing (.pptx)<small>Title, money map, key links, losses, payments, questions</small></span></button>
+  <button type="button" data-m="pptx">${IC('M4 4h16v12H4zM12 16v4M8 20h8')}<span>Slide deck (.pptx)<small>Visual briefing for PowerPoint, Keynote or Google Slides</small></span></button>
   <button type="button" data-m="png">${IC('M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4')}<span>Map image (.png)<small>High resolution, as shown now</small></span></button>
-  <button type="button" data-m="csv">${IC('M4 4h16v16H4zM4 10h16M10 4v16')}<span>Payments spreadsheet (.csv)<small>Opens in Excel</small></span></button>
   <button type="button" data-m="json">${IC('M12 3v12M7 10l5 5 5-5M5 21h14')}<span>Case file (.json)<small>Full backup to reopen later</small></span></button><hr>
   <button type="button" data-m="present">${IC('M3 4h18v12H3zM12 16v4M8 20h8')}Present on screen</button>`));
 let armed = null;
@@ -2031,7 +2174,7 @@ menu.addEventListener('click', e => {
   closeMenus();
   ({ new: () => addCase(emptyCase(), 'New empty case'), dup: () => { const c = sanitize(JSON.parse(JSON.stringify(state))); c.meta.title = (c.meta.title || 'Case') + ' (copy)'; addCase(c, 'Case duplicated'); },
      example: () => addCase(exampleCase(), 'Example case added'), import: () => $('#file-in').click(), settings: editSettings,
-     pptx: exportPPTX, png: exportPNG, csv: exportCSV, json: exportJSON, present: openPresenter })[m]?.();
+     pptx: exportPPTX, png: exportPNG, json: exportJSON, present: openPresenter })[m]?.();
 });
 $('#file-in').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
@@ -2052,7 +2195,7 @@ function palSource() {
     ...S.notes.map(n => ({ kind: 'n', label: clip(n.text, 70), sub: 'Note' + (n.date ? ' · ' + fmtDate(n.date) : ''), run: () => select(n.id), icon: `<span class="acard-ic r-note">${IC('M5 3h10l4 4v14H5z')}</span>`, key: normName(n.text) })),
     ...S.questions.map(q => ({ kind: 'q', label: clip(q.text, 70), sub: q.status === 'answered' ? 'Answered question' : 'Open question', run: () => select(q.id), icon: `<span class="acard-ic r-question">${IC('M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01')}</span>`, key: normName(q.text + ' ' + q.answer) })),
     cmd('Present the case', 'Full-screen briefing', openPresenter, `<span class="acard-ic r-question">${IC('M3 4h18v12H3z')}</span>`),
-    cmd('Save as PowerPoint', 'Briefing deck (.pptx)', exportPPTX, `<span class="acard-ic r-question">${IC('M12 3v12M7 10l5 5 5-5')}</span>`),
+    cmd('Save the slide deck', 'Visual briefing (.pptx)', exportPPTX, `<span class="acard-ic r-question">${IC('M12 3v12M7 10l5 5 5-5')}</span>`),
     cmd('Save map image', 'PNG', exportPNG, `<span class="acard-ic r-question">${IC('M4 5h16v14H4z')}</span>`),
     cmd('Replay the case over time', 'Timeline', play, `<span class="acard-ic r-question">${IC('M7 4.5v15l13-7.5z')}</span>`),
     cmd('Add a victim', 'New person', () => editPerson(null, 'victim'), `<span class="acard-ic r-victim">${IC('M12 5v14M5 12h14')}</span>`),
